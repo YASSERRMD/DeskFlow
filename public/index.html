@@ -358,7 +358,7 @@ function injectForm(formHtml, intent) {
     const formData = collectFormData(form);
     const formId   = form.id;
 
-    // Step 1: fetch context + prompts from server
+    // Step 1: fetch RAG context + prompts from server
     const typing = addTyping();
     let apiData;
     try {
@@ -381,10 +381,33 @@ function injectForm(formHtml, intent) {
     // Step 2: browser-side WebGPU inference (or fallback to template)
     typing.closest('div').remove();
 
+    /**
+     * After inference completes (WebGPU or template), POST the final response
+     * back to FastAPI so it can be logged / ticketed on the server.
+     */
+    async function resolveTicket(response, source) {
+      try {
+        await fetch('/api/resolve', {
+          method:  'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            ticket_id: apiData.ticket_id,
+            form_id:   formId,
+            data:      formData,
+            response,
+            source,
+          }),
+        });
+      } catch (err) {
+        console.warn('[DeskFlow] /api/resolve failed (non-fatal):', err);
+      }
+    }
+
     const llmGenerate = window._llmGenerate;
     if (typeof llmGenerate !== 'function') {
       // Module not yet parsed (extremely rare on slow connections)
       addMarkdownBubble(apiData.template_response);
+      resolveTicket(apiData.template_response, 'template');
       return;
     }
 
@@ -394,14 +417,18 @@ function injectForm(formHtml, intent) {
       apiData.system_prompt,
       apiData.user_prompt,
       apiData.template_response,
-      // onToken — progressively update bubble
+      // onToken — progressively update streaming bubble
       (accumulated) => streaming.update(accumulated),
-      // onDone — finalise
-      (final)       => streaming.done(final),
-      // onFallback — template response (WebGPU unavailable or failed)
-      (template)    => {
+      // onDone — finalise bubble, then POST result to FastAPI
+      (final) => {
+        streaming.done(final);
+        resolveTicket(final, 'webgpu');
+      },
+      // onFallback — WebGPU unavailable/failed, use template, then POST to FastAPI
+      (template) => {
         streaming.remove();
         addMarkdownBubble(template);
+        resolveTicket(template, 'template');
       },
     );
 

@@ -1,11 +1,18 @@
 """
 adapters/fastapi_adapter.py — FastAPI route handlers for DeskFlow.
+
+Flow:
+  POST /api/message  → intent detection + form HTML
+  POST /api/submit   → RAG retrieval → prompts for browser WebGPU inference
+  POST /api/resolve  → browser sends back the generated response for logging
 """
 
 from __future__ import annotations
 
 import logging
 import os
+import uuid
+import datetime
 from typing import Any
 
 from fastapi import APIRouter
@@ -19,6 +26,9 @@ from llm.responder import build_system_prompt, form_result_to_prompt, generate_r
 logger = logging.getLogger(__name__)
 
 router = APIRouter()
+
+# In-memory resolution log (form_id → list of resolved tickets)
+_RESOLUTION_LOG: list[dict] = []
 
 
 # ------------------------------------------------------------------ #
@@ -41,9 +51,23 @@ class SubmitRequest(BaseModel):
 
 
 class SubmitResponse(BaseModel):
+    ticket_id: str          # reference ID for the resolve call
     system_prompt: str      # for WebGPU inference in the browser
     user_prompt: str        # for WebGPU inference in the browser
     template_response: str  # fallback when WebGPU is unavailable
+
+
+class ResolveRequest(BaseModel):
+    ticket_id: str
+    form_id: str
+    data: dict[str, Any]
+    response: str           # the LLM-generated (or template) text from the browser
+    source: str = "webgpu"  # "webgpu" | "template"
+
+
+class ResolveResponse(BaseModel):
+    ticket_id: str
+    status: str
 
 
 # ------------------------------------------------------------------ #
@@ -63,10 +87,10 @@ async def handle_message(body: MessageRequest) -> MessageResponse:
 @router.post("/api/submit", response_model=SubmitResponse)
 async def handle_submit(body: SubmitRequest) -> SubmitResponse:
     """
-    Process a form submission: run RAG retrieval and build prompts for
-    browser-side WebGPU inference.  Also returns a template fallback response
-    for browsers where WebGPU is unavailable.
+    Run RAG retrieval and build prompts for browser-side WebGPU inference.
+    Returns a ticket_id the browser must include in the subsequent /api/resolve call.
     """
+    ticket_id = str(uuid.uuid4())
     form_result = {"form_id": body.form_id, "typed_data": body.data}
 
     knowledge_dir = os.environ.get("KNOWLEDGE_DIR", "./knowledge/runbooks")
@@ -76,9 +100,39 @@ async def handle_submit(body: SubmitRequest) -> SubmitResponse:
     user_prompt = form_result_to_prompt(form_result)
     template_response = generate_response_template(form_result)
 
-    logger.info("Prompts built for form: %s", body.form_id)
+    logger.info("Ticket %s: prompts built for form %s", ticket_id, body.form_id)
     return SubmitResponse(
+        ticket_id=ticket_id,
         system_prompt=system_prompt,
         user_prompt=user_prompt,
         template_response=template_response,
     )
+
+
+@router.post("/api/resolve", response_model=ResolveResponse)
+async def handle_resolve(body: ResolveRequest) -> ResolveResponse:
+    """
+    Receive the LLM-generated response from the browser and log the resolved ticket.
+    The browser calls this after inference completes (WebGPU or template fallback).
+    """
+    entry = {
+        "ticket_id": body.ticket_id,
+        "form_id":   body.form_id,
+        "data":      body.data,
+        "response":  body.response,
+        "source":    body.source,
+        "resolved_at": datetime.datetime.utcnow().isoformat() + "Z",
+    }
+    _RESOLUTION_LOG.append(entry)
+
+    logger.info(
+        "Ticket %s resolved via %s (form: %s, response_len: %d chars)",
+        body.ticket_id, body.source, body.form_id, len(body.response),
+    )
+    return ResolveResponse(ticket_id=body.ticket_id, status="logged")
+
+
+@router.get("/api/resolutions")
+async def list_resolutions():
+    """Return all logged resolutions (useful for admin/debugging)."""
+    return {"count": len(_RESOLUTION_LOG), "items": _RESOLUTION_LOG}
