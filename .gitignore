@@ -1,0 +1,42 @@
+# Python
+__pycache__/
+*.py[cod]
+*.pyo
+*.pyd
+*.so
+*.egg
+*.egg-info/
+dist/
+build/
+.eggs/
+
+# Environment
+.env
+venv/
+.venv/
+env/
+ENV/
+
+# Model files
+*.onnx
+model/
+
+# Knowledge base PDFs (keep .md runbooks but not uploaded PDFs)
+knowledge/runbooks/*.pdf
+
+# Chainlit runtime files (keep config, exclude runtime cache)
+.chainlit/cache/
+.chainlit/files/
+.chainlit/__pycache__/
+
+# IDE
+.idea/
+.vscode/
+*.swp
+*.swo
+.DS_Store
+
+# Test/coverage
+.pytest_cache/
+.coverage
+htmlcov/
