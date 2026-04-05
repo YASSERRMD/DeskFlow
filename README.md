@@ -1,41 +1,54 @@
 # DeskFlow
 
-AI-powered IT Helpdesk assistant built with Chainlit, a local ONNX LLM (LFM2.5-350M), and a form-driven intake system using formora.
+AI-powered IT Helpdesk assistant built with Chainlit, a local ONNX LLM (LFM2.5-350M), and a form-driven intake system using [formora](https://github.com/YASSERRMD/formora).
 
 ## Overview
 
 DeskFlow uses natural language understanding to:
-1. Detect the intent of an IT support request
-2. Render a structured intake form tailored to that intent
-3. Retrieve relevant runbook context via TF-IDF RAG
-4. Generate a step-by-step resolution using a local LLM
+1. Detect the intent of an IT support request (10 categories)
+2. Render a structured Tailwind-styled intake form tailored to that intent
+3. Retrieve relevant runbook context via TF-IDF RAG over the knowledge base
+4. Generate a step-by-step resolution using a local LFM2.5-350M ONNX model (or a rule-based template fallback)
 
-## Setup
+## Architecture
 
-```bash
-# 1. Clone the repo
-git clone <repo-url>
-cd deskflow
-
-# 2. Create virtual environment
-python -m venv venv
-source venv/bin/activate  # Windows: venv\Scripts\activate
-
-# 3. Install dependencies
-pip install -r requirements.txt
-
-# 4. Configure environment
-cp .env.example .env
-# Edit .env with your model path and knowledge directory
-
-# 5. Download LFM2.5-350M-ONNX model
-# Place model files in the directory specified by MODEL_PATH in .env
 ```
-
-## Run
-
-```bash
-chainlit run main.py
+  User types a message
+         │
+         ▼
+┌─────────────────────┐
+│  Intent Classifier  │  keyword scoring over 10 intent categories
+│  (intent/classifier)│
+└──────────┬──────────┘
+           │ intent label
+           ▼
+┌─────────────────────┐
+│  Form Dispatcher    │  maps intent → formora HTML form
+│  (forms/dispatcher) │
+└──────────┬──────────┘
+           │ HTML form rendered in Chainlit
+           ▼
+      User fills form
+           │
+           ▼  formora submit (__formora__JSON)
+┌─────────────────────┐
+│  formora parse()    │  extracts typed_data from submission
+└──────────┬──────────┘
+           │ FormResult
+           ▼
+┌─────────────────────┐
+│  RAG Retriever      │  TF-IDF search over knowledge/runbooks/
+│  (rag/retriever)    │  returns top-5 relevant runbook chunks
+└──────────┬──────────┘
+           │ context string
+           ▼
+┌─────────────────────┐
+│  LLM Responder      │  LFM2.5-350M-ONNX via optimum/onnxruntime
+│  (llm/responder)    │  or rule-based template fallback
+└──────────┬──────────┘
+           │ markdown response
+           ▼
+    Chainlit chat message
 ```
 
 ## Project Structure
@@ -43,69 +56,124 @@ chainlit run main.py
 ```
 deskflow/
 ├── main.py                  # Chainlit entry point
+├── demo.py                  # Terminal demo (no Chainlit required)
 ├── requirements.txt
 ├── .env.example
 ├── intent/
-│   └── classifier.py        # Keyword-based intent detection
+│   └── classifier.py        # Keyword scoring for 10 IT intents
 ├── forms/
-│   ├── dispatcher.py        # Maps intents to forms
+│   ├── dispatcher.py        # FORM_MAP: intent → build function
 │   ├── vpn.py               # VPN issue form
-│   ├── account.py           # Account issue form
-│   ├── hardware.py          # Hardware issue form
+│   ├── account.py           # Account/MFA issue form
+│   ├── hardware.py          # Hardware fault form
 │   ├── software.py          # Software issue form
 │   ├── network.py           # Network issue form
-│   ├── email_comms.py       # Email/comms issue form
-│   ├── access.py            # Access request form
-│   ├── procurement.py       # Procurement request form
-│   ├── onboarding.py        # Onboarding setup form
-│   └── generic_incident.py  # Generic incident form
+│   ├── email_comms.py       # Email/Teams issue form
+│   ├── access.py            # Access request form (multi-step approval)
+│   ├── procurement.py       # Procurement/purchase request form
+│   ├── onboarding.py        # New joiner setup form (3 steps)
+│   └── generic_incident.py  # Generic IT incident form
 ├── rag/
-│   └── retriever.py         # TF-IDF knowledge base retrieval
+│   └── retriever.py         # TF-IDF index + retrieval with memory caching
 ├── llm/
-│   └── responder.py         # ONNX LLM response generation
+│   └── responder.py         # ONNX model loading + template fallback
 ├── adapters/
-│   └── chainlit_adapter.py  # Chainlit event handlers
-└── knowledge/
-    └── runbooks/            # Markdown runbook files
+│   └── chainlit_adapter.py  # on_chat_start + on_message handlers
+├── knowledge/
+│   └── runbooks/            # 10 markdown runbooks (one per intent)
+└── tests/
+    ├── test_intent.py        # 36 intent tests
+    ├── test_forms.py         # 21 form tests
+    └── test_pipeline.py      # 15 RAG pipeline tests
+```
+
+## Setup
+
+### Prerequisites
+
+- Python 3.9+
+- Rust toolchain (for building formora from source)
+- `maturin` build tool: `pip install maturin`
+
+```bash
+# 1. Clone the repo
+git clone https://github.com/YASSERRMD/DeskFlow.git
+cd DeskFlow
+
+# 2. Create virtual environment
+python -m venv venv
+source venv/bin/activate       # macOS/Linux
+# venv\Scripts\activate        # Windows
+
+# 3. Install dependencies (builds formora from source)
+pip install -r requirements.txt
+
+# 4. Configure environment
+cp .env.example .env
+# Edit .env — set MODEL_PATH to your LFM2.5-350M-ONNX directory
+# The app works without a model using the built-in template fallback
+```
+
+### (Optional) Download LFM2.5-350M-ONNX
+
+```bash
+# Using Hugging Face CLI
+pip install huggingface_hub
+huggingface-cli download LiquidAI/LFM2.5-350M-ONNX --local-dir ./model/LFM2.5-350M-ONNX
+```
+
+Then set `MODEL_PATH=./model/LFM2.5-350M-ONNX` in `.env`.
+
+## Run
+
+```bash
+# Interactive chat (Chainlit)
+chainlit run main.py
+
+# Terminal demo (no Chainlit)
+python3 demo.py
+
+# Tests
+python3 -m pytest tests/ -v
 ```
 
 ## How to Add New Forms
 
-1. Create `forms/<name>.py` with a `build() -> str` function using formora
-2. Add the intent keyword list to `intent/classifier.py` under `INTENT_KEYWORDS`
-3. Register the form in `forms/dispatcher.py` under `FORM_MAP`
+1. Create `forms/<name>.py` with a `build() -> str` function using formora:
+   ```python
+   from formora import Form, CssFramework
+
+   def build() -> str:
+       return (
+           Form("my_form_id")
+           .css(CssFramework.tailwind())
+           .text("field_name", "Field Label", required=True)
+           .submit_label("Submit My Form")
+           .build()
+       )
+   ```
+2. Add keywords to `intent/classifier.py` → `INTENT_KEYWORDS` and an intro to `_INTRO_MESSAGES`
+3. Register in `forms/dispatcher.py` → `FORM_MAP`
+4. Add a template response in `llm/responder.py` → `_TEMPLATE_RESPONSES`
 
 ## How to Add New Runbooks
 
-1. Add a `.md` or `.txt` file to `knowledge/runbooks/`
-2. The RAG retriever will automatically index it on next startup
+1. Add a `.md`, `.txt`, or `.pdf` file to `knowledge/runbooks/`
+2. The RAG retriever automatically indexes new files on next startup (or `invalidate_index()`)
+3. Structure runbooks with sections: Overview, Common Causes, Resolution Steps, Escalation
 
 ## How to Swap the LLM Model
 
-1. Update `MODEL_PATH` in your `.env` file
-2. In `llm/responder.py`, adjust `load_model()` if the new model uses a different architecture
-3. The fallback template responder will be used if the model fails to load
+1. Set `MODEL_PATH` in `.env` to the new model directory
+2. If the model uses a different architecture than `ORTModelForCausalLM`, update `load_model()` in `llm/responder.py`
+3. Adjust `max_new_tokens` and `do_sample` in the pipeline call as needed
+4. The template fallback activates automatically if model loading fails
 
-## Architecture
+## Tests
 
 ```
-User Message
-     │
-     ▼
-Intent Classifier (keyword scoring)
-     │
-     ├──► Form Dispatcher → formora HTML Form → User fills form
-     │                                               │
-     │                                               ▼
-     │                                     formora Parse Result
-     │                                               │
-     ├──────────────────────────────────────────────►│
-     │                                               ▼
-     │                                     RAG Retriever (TF-IDF)
-     │                                               │
-     │                                               ▼
-     └──────────────────────────────────────► LLM Responder (ONNX)
-                                                      │
-                                                      ▼
-                                              Markdown Response
+72 passing tests:
+  36 intent tests  — all 10 intents, fallback, case insensitivity
+  21 form tests    — all 10 form builds, field content, dispatcher
+  15 pipeline tests — load_knowledge_base, build_index, retrieve_context
 ```
