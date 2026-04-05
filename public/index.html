@@ -123,7 +123,15 @@
 <!-- WebGPU LLM — loaded as an ES module                              -->
 <!-- ---------------------------------------------------------------- -->
 <script type="module">
-import { pipeline, TextStreamer } from 'https://cdn.jsdelivr.net/npm/@huggingface/transformers@3/dist/transformers.min.js';
+import { pipeline, TextStreamer, env } from 'https://cdn.jsdelivr.net/npm/@huggingface/transformers@3.5.0/dist/transformers.min.js';
+
+// Mirror barq-web-rag env setup — required to prevent onnxruntime-web
+// memory errors and to locate WASM binaries from CDN.
+env.allowLocalModels = false;
+if (env.backends?.onnx?.wasm) {
+  env.backends.onnx.wasm.numThreads = 1;
+  env.backends.onnx.wasm.wasmPaths = 'https://cdn.jsdelivr.net/npm/onnxruntime-web/dist/';
+}
 
 const MODEL_ID  = 'LiquidAI/LFM2.5-350M-ONNX';
 const DTYPE     = 'q4';

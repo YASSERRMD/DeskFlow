@@ -13,11 +13,26 @@ import os
 from dotenv import load_dotenv
 from contextlib import asynccontextmanager
 
-from fastapi import FastAPI
+from fastapi import FastAPI, Request
 from fastapi.staticfiles import StaticFiles
 from fastapi.responses import FileResponse
+from starlette.middleware.base import BaseHTTPMiddleware
 
 from adapters.fastapi_adapter import router
+
+
+class COOPCOEPMiddleware(BaseHTTPMiddleware):
+    """
+    Add Cross-Origin-Opener-Policy and Cross-Origin-Embedder-Policy headers to
+    every response.  These are required for SharedArrayBuffer, which
+    onnxruntime-web needs when running the LLM on WebGPU in the browser.
+    (Same headers that barq-web-rag's Vite dev server sets.)
+    """
+    async def dispatch(self, request: Request, call_next):
+        response = await call_next(request)
+        response.headers["Cross-Origin-Opener-Policy"] = "same-origin"
+        response.headers["Cross-Origin-Embedder-Policy"] = "require-corp"
+        return response
 
 load_dotenv()
 
@@ -35,6 +50,7 @@ async def lifespan(app: FastAPI):
 
 
 app = FastAPI(title="DeskFlow", description="AI-powered IT Helpdesk", lifespan=lifespan)
+app.add_middleware(COOPCOEPMiddleware)
 
 # Register API routes
 app.include_router(router)
