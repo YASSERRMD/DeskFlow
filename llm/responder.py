@@ -84,9 +84,17 @@ FUNCTION_DEFINITIONS: list[dict] = [
 # Model loading                                                        #
 # ------------------------------------------------------------------ #
 
-def load_model(model_path: str) -> Any:
+_HF_MODEL_ID = "LiquidAI/LFM2.5-350M-ONNX"
+
+
+def load_model(model_path: str | None = None) -> Any:
     """
     Load LFM2.5-350M-ONNX using optimum ORTModelForCausalLM.
+
+    model_path can be:
+      - A local directory path (used as-is)
+      - A HuggingFace model ID (e.g. "LiquidAI/LFM2.5-350M-ONNX") — auto-downloads
+      - None / empty string → defaults to "LiquidAI/LFM2.5-350M-ONNX" from HuggingFace
 
     Returns a text-generation pipeline or None on failure.
     Caches the pipeline in memory after first successful load.
@@ -95,20 +103,24 @@ def load_model(model_path: str) -> Any:
     if _PIPELINE is not None:
         return _PIPELINE
 
-    if not model_path or not os.path.isdir(model_path):
-        logger.warning("Model path does not exist: %s — using template fallback", model_path)
-        return None
+    # Resolve model identifier: local path or HuggingFace model ID
+    if not model_path:
+        model_id = _HF_MODEL_ID
+    elif os.path.isdir(model_path):
+        model_id = model_path  # local directory
+    else:
+        model_id = model_path  # treat as HuggingFace repo ID
 
     start_time = time.time()
     try:
         from optimum.onnxruntime import ORTModelForCausalLM
         from transformers import AutoTokenizer, pipeline
 
-        logger.info("Loading tokenizer from %s", model_path)
-        tokenizer = AutoTokenizer.from_pretrained(model_path)
+        logger.info("Loading tokenizer from %s", model_id)
+        tokenizer = AutoTokenizer.from_pretrained(model_id)
 
-        logger.info("Loading ONNX model from %s", model_path)
-        model = ORTModelForCausalLM.from_pretrained(model_path)
+        logger.info("Loading ONNX model from %s (may download from HuggingFace)", model_id)
+        model = ORTModelForCausalLM.from_pretrained(model_id)
 
         elapsed = time.time() - start_time
         if elapsed > MODEL_LOAD_TIMEOUT:
@@ -121,11 +133,11 @@ def load_model(model_path: str) -> Any:
             max_new_tokens=512,
             do_sample=False,
         )
-        logger.info("Model loaded in %.1fs", elapsed)
+        logger.info("Model loaded successfully in %.1fs", elapsed)
         return _PIPELINE
 
     except Exception as exc:
-        logger.error("Failed to load model: %s — using template fallback", exc)
+        logger.error("Failed to load model '%s': %s — using template fallback", model_id, exc)
         return None
 
 
@@ -245,7 +257,7 @@ def generate_response(form_result: Any, context: str, model_path: str | None = N
     Uses the ONNX pipeline if loaded, otherwise falls back to template response.
     """
     if model_path is None:
-        model_path = os.environ.get("MODEL_PATH", "")
+        model_path = os.environ.get("MODEL_PATH", None)  # None → HuggingFace default
 
     pipe = _PIPELINE or load_model(model_path)
 
