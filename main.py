@@ -1,16 +1,24 @@
 """
-main.py — DeskFlow Chainlit entry point.
+main.py — DeskFlow FastAPI entry point.
 
-Starts the AI-powered IT Helpdesk chat application.
+Run:
+    python3 main.py
+    # or
+    uvicorn main:app --reload
 """
 
 import logging
 import os
+import threading
 
 from dotenv import load_dotenv
-import chainlit as cl
+from contextlib import asynccontextmanager
 
-from adapters.chainlit_adapter import on_chat_start, on_message
+from fastapi import FastAPI
+from fastapi.staticfiles import StaticFiles
+from fastapi.responses import FileResponse
+
+from adapters.fastapi_adapter import router
 
 load_dotenv()
 
@@ -20,10 +28,30 @@ logging.basicConfig(
 )
 logger = logging.getLogger(__name__)
 
+@asynccontextmanager
+async def lifespan(app: FastAPI):
+    _preload_knowledge_base()
+    _preload_model_async()
+    yield
+
+
+app = FastAPI(title="DeskFlow", description="AI-powered IT Helpdesk", lifespan=lifespan)
+
+# Register API routes
+app.include_router(router)
+
+# Serve the frontend from public/
+app.mount("/static", StaticFiles(directory="public"), name="static")
+
+
+@app.get("/", response_class=FileResponse)
+async def serve_ui():
+    return FileResponse("public/index.html")
+
 
 def _preload_knowledge_base() -> None:
-    """Pre-warm the TF-IDF index at startup."""
-    from rag.retriever import load_knowledge_base, build_index, _INDEX_CACHE
+    """Pre-warm the TF-IDF index."""
+    from rag.retriever import load_knowledge_base, build_index
     import rag.retriever as retriever
 
     knowledge_dir = os.environ.get("KNOWLEDGE_DIR", "./knowledge/runbooks")
@@ -32,26 +60,24 @@ def _preload_knowledge_base() -> None:
         chunks = load_knowledge_base(knowledge_dir)
         if chunks:
             retriever._INDEX_CACHE = build_index(chunks)
-            logger.info("Knowledge base loaded: %d chunks", len(chunks))
+            logger.info("Knowledge base ready: %d chunks indexed", len(chunks))
         else:
-            logger.warning("No documents found in knowledge directory: %s", knowledge_dir)
+            logger.warning("No documents found in: %s", knowledge_dir)
 
 
-def _preload_model() -> None:
-    """Attempt to load the LLM at startup (non-blocking on failure)."""
-    from llm.responder import load_model
-    model_path = os.environ.get("MODEL_PATH", "")
-    if model_path:
-        logger.info("Pre-loading LLM model from %s", model_path)
+def _preload_model_async() -> None:
+    """Load the LLM in a background thread so the server starts immediately."""
+    def _load():
+        from llm.responder import load_model
+        model_path = os.environ.get("MODEL_PATH", None)
+        logger.info("Background model load starting (model: %s)", model_path or "LiquidAI/LFM2.5-350M-ONNX")
         load_model(model_path)
-    else:
-        logger.info("MODEL_PATH not set — will use template fallback for responses")
+
+    thread = threading.Thread(target=_load, daemon=True, name="model-loader")
+    thread.start()
 
 
-# Pre-load on startup
-_preload_knowledge_base()
-_preload_model()
 
-# Wire Chainlit handlers
-cl.on_chat_start(on_chat_start)
-cl.on_message(on_message)
+if __name__ == "__main__":
+    import uvicorn
+    uvicorn.run("main:app", host="0.0.0.0", port=8000, reload=False)
