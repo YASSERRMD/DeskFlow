@@ -9,7 +9,6 @@ Run:
 
 import logging
 import os
-import threading
 
 from dotenv import load_dotenv
 from contextlib import asynccontextmanager
@@ -28,10 +27,10 @@ logging.basicConfig(
 )
 logger = logging.getLogger(__name__)
 
+
 @asynccontextmanager
 async def lifespan(app: FastAPI):
     _preload_knowledge_base()
-    _preload_model_async()
     yield
 
 
@@ -63,19 +62,6 @@ def _preload_knowledge_base() -> None:
             logger.info("Knowledge base ready: %d chunks indexed", len(chunks))
         else:
             logger.warning("No documents found in: %s", knowledge_dir)
-
-
-def _preload_model_async() -> None:
-    """Load the LLM in a background thread so the server starts immediately."""
-    def _load():
-        from llm.responder import load_model
-        model_path = os.environ.get("MODEL_PATH", None)
-        logger.info("Background model load starting (model: %s)", model_path or "LiquidAI/LFM2.5-350M-ONNX")
-        load_model(model_path)
-
-    thread = threading.Thread(target=_load, daemon=True, name="model-loader")
-    thread.start()
-
 
 
 if __name__ == "__main__":
