@@ -12,6 +12,7 @@ from __future__ import annotations
 import logging
 import os
 import uuid
+import random
 import datetime
 from typing import Any
 
@@ -51,7 +52,8 @@ class SubmitRequest(BaseModel):
 
 
 class SubmitResponse(BaseModel):
-    ticket_id: str          # reference ID for the resolve call
+    ticket_id: str          # internal UUID for the resolve call
+    request_number: str     # human-readable INC-XXXX shown to the user
     system_prompt: str      # for WebGPU inference in the browser
     user_prompt: str        # for WebGPU inference in the browser
     template_response: str  # fallback when WebGPU is unavailable
@@ -59,6 +61,7 @@ class SubmitResponse(BaseModel):
 
 class ResolveRequest(BaseModel):
     ticket_id: str
+    request_number: str
     form_id: str
     data: dict[str, Any]
     response: str           # the LLM-generated (or template) text from the browser
@@ -91,18 +94,20 @@ async def handle_submit(body: SubmitRequest) -> SubmitResponse:
     Returns a ticket_id the browser must include in the subsequent /api/resolve call.
     """
     ticket_id = str(uuid.uuid4())
+    request_number = f"INC-{random.randint(1000, 9999)}"
     form_result = {"form_id": body.form_id, "typed_data": body.data}
 
     knowledge_dir = os.environ.get("KNOWLEDGE_DIR", "./knowledge/runbooks")
     context = retrieve_context(form_result, knowledge_dir=knowledge_dir)
 
-    system_prompt = build_system_prompt(body.form_id, context)
+    system_prompt = build_system_prompt(body.form_id, context, request_number)
     user_prompt = form_result_to_prompt(form_result)
-    template_response = generate_response_template(form_result)
+    template_response = generate_response_template(form_result, request_number)
 
-    logger.info("Ticket %s: prompts built for form %s", ticket_id, body.form_id)
+    logger.info("Ticket %s (%s): prompts built for form %s", ticket_id, request_number, body.form_id)
     return SubmitResponse(
         ticket_id=ticket_id,
+        request_number=request_number,
         system_prompt=system_prompt,
         user_prompt=user_prompt,
         template_response=template_response,
@@ -116,12 +121,13 @@ async def handle_resolve(body: ResolveRequest) -> ResolveResponse:
     The browser calls this after inference completes (WebGPU or template fallback).
     """
     entry = {
-        "ticket_id": body.ticket_id,
-        "form_id":   body.form_id,
-        "data":      body.data,
-        "response":  body.response,
-        "source":    body.source,
-        "resolved_at": datetime.datetime.utcnow().isoformat() + "Z",
+        "ticket_id":      body.ticket_id,
+        "request_number": body.request_number,
+        "form_id":        body.form_id,
+        "data":           body.data,
+        "response":       body.response,
+        "source":         body.source,
+        "resolved_at":    datetime.datetime.utcnow().isoformat() + "Z",
     }
     _RESOLUTION_LOG.append(entry)
 
