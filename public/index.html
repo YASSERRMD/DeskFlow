@@ -466,7 +466,7 @@ async function sendMessage() {
     const data = await res.json();
     typingBubble.closest('.flex.justify-start').remove();
     addTextBubble(data.intro);
-    injectForm(data.form_html, data.intent);
+    if (data.form_html) injectForm(data.form_html, data.intent);
   } catch (_err) {
     typingBubble.closest('.flex.justify-start').remove();
     addTextBubble('Sorry, something went wrong. Please try again.');
@@ -525,11 +525,11 @@ function injectForm(formHtml, intent) {
       return;
     }
 
-    // Collapse form to a compact pill
-    bubble.style.cssText = 'max-width:44rem';
+    // Collapse form to a compact pill showing the ticket number
+    const reqNum = apiData.request_number || '';
     bubble.className = 'rounded-xl px-4 py-2 text-xs font-medium flex items-center gap-2';
     bubble.style.cssText = 'background:#1c2128;border:1px solid #3fb95022;color:#3fb950;max-width:44rem';
-    bubble.innerHTML = `<svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><polyline points="20 6 9 17 4 12"/></svg> Submitted — ${formId.replace(/_/g,' ')}`;
+    bubble.innerHTML = `<svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><polyline points="20 6 9 17 4 12"/></svg> Request <strong>${reqNum}</strong> submitted`;
 
     typingBubble.closest('.flex.justify-start').remove();
 
@@ -537,7 +537,7 @@ function injectForm(formHtml, intent) {
       try {
         await fetch('/api/resolve', {
           method: 'POST', headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({ ticket_id: apiData.ticket_id, form_id: formId, data: formData, response, source }),
+          body: JSON.stringify({ ticket_id: apiData.ticket_id, request_number: apiData.request_number, form_id: formId, data: formData, response, source }),
         });
       } catch (err) { console.warn('[DeskFlow] /api/resolve failed:', err); }
     }
