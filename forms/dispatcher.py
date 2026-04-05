@@ -31,7 +31,9 @@ FORM_MAP: dict[str, Callable[[], str]] = {
 
 
 def dispatch_form(intent: str) -> str:
-    """Return the HTML form for the given intent, falling back to generic_incident."""
+    """Return the HTML form for the given intent. Returns '' for greeting/chitchat."""
+    if intent == "greeting":
+        return ""
     builder = FORM_MAP.get(intent, FORM_MAP["generic_incident"])
     logger.debug("Dispatching form for intent: %s", intent)
     return builder()
