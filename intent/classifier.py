@@ -1,6 +1,14 @@
 import logging
+import re
 
 logger = logging.getLogger(__name__)
+
+# Words that indicate a greeting or chitchat — no IT issue, no form needed.
+_GREETING_PATTERNS = re.compile(
+    r"^\s*(hi+|hey+|hello+|howdy|yo+|sup|good (morning|afternoon|evening)|"
+    r"thanks?|thank you|cheers|bye|goodbye|ok|okay|cool|great|sure|got it|noted)\s*[!?.]*\s*$",
+    re.IGNORECASE,
+)
 
 INTENT_KEYWORDS: dict[str, list[str]] = {
     "vpn": [
@@ -43,36 +51,46 @@ INTENT_KEYWORDS: dict[str, list[str]] = {
 }
 
 _INTRO_MESSAGES: dict[str, str] = {
-    "vpn": "I'll help you fix your VPN issue. Please fill in the details below:",
-    "account": "I'll help you resolve your account issue. Please fill in the details below:",
-    "hardware": "I'll help you with your hardware problem. Please fill in the details below:",
-    "software": "I'll help you with your software issue. Please fill in the details below:",
-    "network": "I'll help you troubleshoot your network problem. Please fill in the details below:",
-    "email": "I'll help you with your email or communications issue. Please fill in the details below:",
-    "access": "I'll help you with your access request. Please fill in the details below:",
-    "procurement": "I'll help you submit a procurement request. Please fill in the details below:",
-    "onboarding": "I'll help you get set up as a new joiner. Please fill in the details below:",
-    "generic_incident": "I'll log your IT issue. Please fill in the details below:",
+    "greeting": "Hey! I'm DeskFlow, your IT support assistant. What can I help you with today?",
+    "vpn": "Sure, let's sort out your VPN. Fill in the quick form below and I'll get you a fix:",
+    "account": "No worries — account issues are quick to fix. Tell me a bit more:",
+    "hardware": "Got it, let's look at your hardware problem. A few details please:",
+    "software": "Happy to help with that software issue. Just a few quick questions:",
+    "network": "Let's get your connection sorted. Fill in the details below:",
+    "email": "I'll help you with your email or comms issue. Quick form below:",
+    "access": "Access request noted. Fill in the details and I'll get it moving:",
+    "procurement": "Let's get your purchase request submitted. Fill in the form:",
+    "onboarding": "Welcome! Let's get you set up. Fill in the onboarding form below:",
+    "generic_incident": "I'm on it. Fill in the details below and I'll pull up the best steps for you:",
 }
 
 
 def detect_intent(message: str) -> str:
-    """Score each intent by keyword matches and return the highest-scoring one."""
-    lowered = message.lower()
+    """
+    Return the best-matching intent for a user message.
+    Returns 'greeting' for small talk so no form is shown.
+    Falls back to 'generic_incident' when keywords match but intent is unclear.
+    """
+    stripped = message.strip()
+
+    # Greetings / chitchat — no form needed
+    if _GREETING_PATTERNS.match(stripped):
+        return "greeting"
+
+    lowered = stripped.lower()
     scores: dict[str, int] = {}
 
     for intent, keywords in INTENT_KEYWORDS.items():
         if intent == "generic_incident":
             continue
-        score = 0
-        for kw in keywords:
-            if kw in lowered:
-                score += 1
-        scores[intent] = score
+        scores[intent] = sum(1 for kw in keywords if kw in lowered)
 
     best_intent = max(scores, key=lambda k: scores[k])
     if scores[best_intent] == 0:
-        logger.debug("No keyword match found, falling back to generic_incident")
+        # Short messages with no keyword match are likely greetings / vague queries
+        if len(stripped.split()) <= 4:
+            return "greeting"
+        logger.debug("No keyword match, falling back to generic_incident")
         return "generic_incident"
 
     logger.debug("Detected intent: %s (score=%d)", best_intent, scores[best_intent])
@@ -80,5 +98,4 @@ def detect_intent(message: str) -> str:
 
 
 def get_intro_message(intent: str) -> str:
-    """Return a friendly one-liner intro for the given intent."""
     return _INTRO_MESSAGES.get(intent, _INTRO_MESSAGES["generic_incident"])

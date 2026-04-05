@@ -69,10 +69,21 @@ _SYSTEM_PROMPTS: dict[str, str] = {
 }
 
 
-def build_system_prompt(form_id: str, context: str) -> str:
+def build_system_prompt(form_id: str, context: str, request_number: str = "") -> str:
     """Return the system prompt for the given form type, with RAG context embedded."""
     template = _SYSTEM_PROMPTS.get(form_id, _SYSTEM_PROMPTS["generic_incident"])
-    return template.format(context=context[:1500] if context else "No context available.")
+    ctx = context[:1500] if context else "No context available."
+    ticket_line = (
+        f"The user's request has been logged as **{request_number}**. "
+        f"Open your reply by mentioning this number warmly "
+        f"(e.g. 'I've logged this as {request_number} — here's what I recommend:'). "
+    ) if request_number else ""
+    preamble = (
+        f"You are DeskFlow, a friendly IT support assistant. "
+        f"{ticket_line}"
+        f"Be concise, warm, and practical.\n\n"
+    )
+    return preamble + template.format(context=ctx)
 
 
 def form_result_to_prompt(form_result: Any) -> str:
@@ -235,7 +246,7 @@ _TEMPLATE_RESPONSES: dict[str, str] = {
 }
 
 
-def generate_response_template(form_result: Any) -> str:
+def generate_response_template(form_result: Any, request_number: str = "") -> str:
     """Rule-based template response — used when the browser WebGPU model is unavailable."""
     if isinstance(form_result, dict):
         form_id = form_result.get("form_id", "generic_incident")
@@ -248,4 +259,7 @@ def generate_response_template(form_result: Any) -> str:
     urgency = str(typed_data.get("urgency", "")).lower()
     if urgency in _URGENCY_NOTE:
         response += _URGENCY_NOTE[urgency]
+
+    if request_number:
+        response = f"I've logged your request as **{request_number}**. Here's what I recommend:\n\n" + response
     return response
