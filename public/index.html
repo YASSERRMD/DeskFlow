@@ -1,41 +1,79 @@
 <!DOCTYPE html>
-<html lang="en" class="dark">
+<html lang="en">
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
   <title>DeskFlow — IT Helpdesk</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
   <script src="https://cdn.tailwindcss.com"></script>
   <script>
-    tailwind.config = { darkMode: 'class' }
+    tailwind.config = {
+      darkMode: 'class',
+      theme: {
+        extend: {
+          fontFamily: { sans: ['Inter', 'system-ui', 'sans-serif'] },
+          colors: {
+            surface:  '#0d1117',
+            panel:    '#161b22',
+            card:     '#1c2128',
+            border:   '#30363d',
+            muted:    '#8b949e',
+          }
+        }
+      }
+    }
   </script>
   <script src="https://cdn.jsdelivr.net/npm/marked/marked.min.js"></script>
   <style>
+    * { font-family: 'Inter', system-ui, sans-serif; }
+    html { background: #0d1117; }
+
     /* Scrollbar */
-    #messages::-webkit-scrollbar { width: 6px; }
-    #messages::-webkit-scrollbar-track { background: transparent; }
-    #messages::-webkit-scrollbar-thumb { background: #374151; border-radius: 3px; }
+    ::-webkit-scrollbar { width: 5px; height: 5px; }
+    ::-webkit-scrollbar-track { background: transparent; }
+    ::-webkit-scrollbar-thumb { background: #30363d; border-radius: 10px; }
+    ::-webkit-scrollbar-thumb:hover { background: #484f58; }
 
-    /* Markdown rendered inside bot bubbles */
-    .md-body h2 { font-size: 1.1rem; font-weight: 700; margin: 0.75rem 0 0.4rem; color: #e5e7eb; }
-    .md-body h3 { font-size: 1rem; font-weight: 600; margin: 0.6rem 0 0.3rem; color: #d1d5db; }
-    .md-body p  { margin: 0.35rem 0; line-height: 1.6; }
-    .md-body ul, .md-body ol { margin: 0.35rem 0 0.35rem 1.4rem; }
-    .md-body li { margin: 0.2rem 0; }
-    .md-body strong { color: #f9fafb; }
-    .md-body blockquote { border-left: 3px solid #f59e0b; padding-left: 0.75rem; margin: 0.5rem 0; color: #fcd34d; background: rgba(245,158,11,0.08); border-radius: 0 4px 4px 0; }
-    .md-body code { background: #1f2937; padding: 1px 5px; border-radius: 4px; font-size: 0.85em; color: #34d399; }
-    .md-body table { width: 100%; border-collapse: collapse; margin: 0.5rem 0; font-size: 0.85rem; }
-    .md-body th { background: #1f2937; padding: 6px 10px; text-align: left; border: 1px solid #374151; }
-    .md-body td { padding: 5px 10px; border: 1px solid #374151; }
-    .md-body hr { border-color: #374151; margin: 0.5rem 0; }
+    /* Markdown */
+    .md-body { line-height: 1.7; }
+    .md-body h2 { font-size: 1.05rem; font-weight: 700; margin: 1rem 0 0.5rem; color: #e6edf3; border-bottom: 1px solid #30363d; padding-bottom: 0.35rem; }
+    .md-body h3 { font-size: 0.95rem; font-weight: 600; margin: 0.75rem 0 0.35rem; color: #cdd9e5; }
+    .md-body p  { margin: 0.4rem 0; color: #adbac7; }
+    .md-body ul, .md-body ol { margin: 0.4rem 0 0.4rem 1.5rem; }
+    .md-body li { margin: 0.3rem 0; color: #adbac7; }
+    .md-body strong { color: #e6edf3; font-weight: 600; }
+    .md-body blockquote {
+      border-left: 3px solid #f0883e; padding: 0.5rem 0.85rem;
+      margin: 0.6rem 0; color: #f0883e; background: rgba(240,136,62,0.07);
+      border-radius: 0 6px 6px 0; font-size: 0.85rem;
+    }
+    .md-body code {
+      background: #161b22; padding: 2px 6px; border-radius: 5px;
+      font-size: 0.82em; color: #79c0ff; border: 1px solid #30363d;
+      font-family: 'SF Mono', 'Fira Code', monospace;
+    }
+    .md-body pre { background: #161b22; border: 1px solid #30363d; border-radius: 8px; padding: 0.85rem; margin: 0.5rem 0; overflow-x: auto; }
+    .md-body pre code { background: none; border: none; padding: 0; }
+    .md-body table { width: 100%; border-collapse: collapse; margin: 0.6rem 0; font-size: 0.82rem; }
+    .md-body th { background: #1c2128; padding: 7px 12px; text-align: left; border: 1px solid #30363d; color: #cdd9e5; font-weight: 600; }
+    .md-body td { padding: 6px 12px; border: 1px solid #30363d; color: #adbac7; }
+    .md-body hr { border-color: #30363d; margin: 0.75rem 0; }
+    .md-body ol { list-style: decimal; }
+    .md-body ul { list-style: disc; }
 
-    /* Typing indicator */
-    .typing span { display: inline-block; width: 7px; height: 7px; border-radius: 50%; background: #6b7280; animation: blink 1.2s infinite; }
-    .typing span:nth-child(2) { animation-delay: 0.2s; }
-    .typing span:nth-child(3) { animation-delay: 0.4s; }
-    @keyframes blink { 0%,80%,100%{opacity:.2} 40%{opacity:1} }
+    /* Streaming cursor */
+    .streaming-cursor::after { content: '▌'; animation: blink-cur 0.75s infinite; color: #388bfd; }
+    @keyframes blink-cur { 0%,100%{opacity:1} 50%{opacity:0} }
 
-    /* Form inside chat */
+    /* Typing dots */
+    .typing-dot { display: inline-block; width: 6px; height: 6px; border-radius: 50%; background: #484f58; animation: bounce-dot 1.3s infinite; }
+    .typing-dot:nth-child(2) { animation-delay: 0.15s; }
+    .typing-dot:nth-child(3) { animation-delay: 0.3s; }
+    @keyframes bounce-dot { 0%,80%,100%{transform:translateY(0);opacity:.4} 40%{transform:translateY(-5px);opacity:1} }
+
+    /* Form fields */
     .form-bubble form { all: unset; display: block; }
     .form-bubble input[type=text],
     .form-bubble input[type=date],
@@ -43,119 +81,359 @@
     .form-bubble input[type=email],
     .form-bubble textarea,
     .form-bubble select {
-      display: block; width: 100%; padding: 0.45rem 0.65rem;
-      background: #1f2937; color: #f3f4f6;
-      border: 1px solid #374151; border-radius: 6px;
-      font-size: 0.875rem; margin-top: 2px; box-sizing: border-box;
+      display: block; width: 100%;
+      padding: 0.5rem 0.75rem;
+      background: #0d1117; color: #cdd9e5;
+      border: 1px solid #30363d; border-radius: 8px;
+      font-size: 0.85rem; margin-top: 4px; box-sizing: border-box;
+      transition: border-color 0.15s, box-shadow 0.15s;
+      font-family: 'Inter', system-ui, sans-serif;
     }
-    .form-bubble select[multiple] { height: 7rem; }
-    .form-bubble input:focus, .form-bubble select:focus, .form-bubble textarea:focus {
-      outline: 2px solid #3b82f6; border-color: #3b82f6;
+    .form-bubble select[multiple] { height: 8rem; }
+    .form-bubble input:focus,
+    .form-bubble select:focus,
+    .form-bubble textarea:focus {
+      outline: none; border-color: #388bfd;
+      box-shadow: 0 0 0 3px rgba(56,139,253,0.15);
     }
-    .form-bubble label { font-size: 0.8rem; color: #9ca3af; display: block; margin-top: 0.7rem; }
-    .form-bubble .flex.items-center { display: flex; align-items: center; gap: 6px; margin-top: 0.7rem; }
-    .form-bubble .flex.items-center label { margin-top: 0; color: #d1d5db; }
-    .form-bubble input[type=checkbox] { width: 15px; height: 15px; accent-color: #3b82f6; flex-shrink: 0; }
+    .form-bubble label {
+      font-size: 0.78rem; font-weight: 500;
+      color: #8b949e; display: block; margin-top: 0.9rem; letter-spacing: 0.01em;
+    }
+    .form-bubble .flex.items-center { display: flex; align-items: center; gap: 8px; margin-top: 0.8rem; }
+    .form-bubble .flex.items-center label { margin-top: 0; color: #cdd9e5; font-size: 0.85rem; }
+    .form-bubble input[type=checkbox] { width: 16px; height: 16px; accent-color: #388bfd; flex-shrink: 0; cursor: pointer; }
     .form-bubble button[type=submit] {
-      margin-top: 1rem; width: 100%; padding: 0.55rem;
-      background: #2563eb; color: white; border-radius: 8px;
-      font-weight: 600; font-size: 0.9rem; cursor: pointer;
-      border: none; transition: background 0.15s;
+      margin-top: 1.25rem; width: 100%; padding: 0.65rem;
+      background: #1f6feb; color: white; border-radius: 8px;
+      font-weight: 600; font-size: 0.875rem; cursor: pointer;
+      border: none; transition: background 0.15s, transform 0.1s;
+      font-family: 'Inter', system-ui, sans-serif; letter-spacing: 0.01em;
     }
-    .form-bubble button[type=submit]:hover { background: #1d4ed8; }
-    .form-bubble button[type=submit]:disabled { background: #374151; cursor: not-allowed; }
-    .form-bubble .text-red-500 { color: #ef4444; }
+    .form-bubble button[type=submit]:hover { background: #388bfd; }
+    .form-bubble button[type=submit]:active { transform: scale(0.99); }
+    .form-bubble button[type=submit]:disabled { background: #21262d; color: #484f58; cursor: not-allowed; transform: none; }
+    .form-bubble .text-red-500 { color: #f85149; font-size: 0.78rem; margin-top: 3px; display: block; }
+
     /* Step wizard */
     .formora-step { display: none; }
     .formora-step.active { display: block; }
-    .step-nav { display: flex; justify-content: space-between; margin-top: 1rem; gap: 8px; }
-    .step-nav button { flex: 1; padding: 0.5rem; border-radius: 6px; font-weight: 600; font-size: 0.85rem; cursor: pointer; border: none; }
-    .btn-back { background: #374151; color: #d1d5db; }
-    .btn-next { background: #2563eb; color: white; }
-    .step-indicator { font-size: 0.75rem; color: #6b7280; text-align: center; margin-top: 0.5rem; }
+    .step-nav { display: flex; gap: 8px; margin-top: 1.1rem; }
+    .step-nav button {
+      flex: 1; padding: 0.55rem; border-radius: 8px; font-weight: 600;
+      font-size: 0.82rem; cursor: pointer; border: none;
+      font-family: 'Inter', system-ui, sans-serif; transition: background 0.15s;
+    }
+    .btn-back { background: #21262d; color: #8b949e; border: 1px solid #30363d !important; }
+    .btn-back:hover { background: #30363d; }
+    .btn-next { background: #1f6feb; color: white; }
+    .btn-next:hover { background: #388bfd; }
+    .step-progress {
+      display: flex; gap: 5px; justify-content: center; margin-top: 0.9rem;
+    }
+    .step-pip {
+      height: 4px; flex: 1; border-radius: 2px; background: #30363d;
+      transition: background 0.2s;
+    }
+    .step-pip.active { background: #388bfd; }
+
+    /* Model progress bar */
+    #model-progress-bar { transition: width 0.4s ease; }
+
+    /* Suggestion chips */
+    .chip {
+      display: inline-flex; align-items: center; gap: 6px;
+      background: #1c2128; border: 1px solid #30363d;
+      color: #8b949e; font-size: 0.8rem; padding: 0.45rem 0.85rem;
+      border-radius: 20px; cursor: pointer; transition: all 0.15s;
+      white-space: nowrap;
+    }
+    .chip:hover { background: #21262d; border-color: #388bfd; color: #cdd9e5; }
+
+    /* Input send button icon */
+    #send-btn svg { display: inline; }
   </style>
 </head>
 
-<body class="bg-gray-950 text-gray-100 h-screen flex flex-col">
+<body class="bg-surface text-gray-100 h-screen flex flex-col overflow-hidden" style="color-scheme:dark">
 
-  <!-- Header -->
-  <header class="bg-gray-900 border-b border-gray-800 px-5 py-3 flex items-center gap-3 flex-shrink-0">
-    <div class="w-8 h-8 rounded-lg bg-blue-600 flex items-center justify-center font-bold text-sm">D</div>
-    <div>
-      <div class="font-semibold text-white text-sm">DeskFlow</div>
-      <div class="text-xs text-gray-400">AI-powered IT Helpdesk</div>
+<!-- ═══════════════════════════════════════════ HEADER ═══ -->
+<header class="bg-panel border-b border-border px-5 h-14 flex items-center gap-3 flex-shrink-0 z-10">
+  <!-- Logo -->
+  <div class="flex items-center gap-2.5">
+    <div class="w-8 h-8 rounded-lg flex items-center justify-center flex-shrink-0"
+         style="background: linear-gradient(135deg,#1f6feb,#388bfd)">
+      <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="white" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
+        <path d="M9 17H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2v3"/>
+        <path d="M13 21l2-2 4 4 2-2-4-4 2-2-6-1z"/>
+      </svg>
     </div>
-    <div id="model-status" class="ml-auto text-xs text-yellow-400 hidden">⏳ Loading AI model…</div>
-  </header>
+    <div>
+      <div class="font-semibold text-white text-sm leading-tight">DeskFlow</div>
+      <div class="text-xs" style="color:#8b949e">AI-powered IT Helpdesk</div>
+    </div>
+  </div>
 
-  <!-- Messages -->
-  <div id="messages" class="flex-1 overflow-y-auto px-4 py-4 space-y-4"></div>
+  <!-- Model status -->
+  <div id="model-status-wrap" class="ml-auto flex items-center gap-3">
+    <div class="flex flex-col items-end gap-1">
+      <div id="model-status" class="text-xs font-medium" style="color:#d29922">⏳ Loading AI…</div>
+      <div id="model-progress-wrap" class="w-36 h-1 rounded-full hidden" style="background:#21262d">
+        <div id="model-progress-bar" class="h-1 rounded-full" style="width:0%;background:#388bfd"></div>
+      </div>
+    </div>
+  </div>
+</header>
 
-  <!-- Input -->
-  <div class="bg-gray-900 border-t border-gray-800 px-4 py-3 flex gap-2 flex-shrink-0">
+<!-- ═══════════════════════════════════════════ CHAT AREA ═══ -->
+<div id="messages" class="flex-1 overflow-y-auto px-4 py-6" style="max-height:calc(100vh - 7rem)">
+
+  <!-- Empty state -->
+  <div id="empty-state" class="flex flex-col items-center justify-center h-full gap-6 select-none" style="min-height:300px">
+    <div class="flex flex-col items-center gap-3">
+      <div class="w-14 h-14 rounded-2xl flex items-center justify-center"
+           style="background:linear-gradient(135deg,#1f6feb22,#388bfd22);border:1px solid #388bfd44">
+        <svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="#388bfd" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round">
+          <path d="M9 17H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2v3"/>
+          <path d="M13 21l2-2 4 4 2-2-4-4 2-2-6-1z"/>
+        </svg>
+      </div>
+      <div>
+        <h2 class="text-base font-semibold text-center" style="color:#e6edf3">How can I help you today?</h2>
+        <p class="text-sm text-center mt-1" style="color:#8b949e">Describe your IT issue or pick a common topic below.</p>
+      </div>
+    </div>
+    <div class="flex flex-wrap justify-center gap-2 max-w-lg">
+      <button class="chip" onclick="useChip('My VPN is not connecting')">
+        <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="5" y="2" width="14" height="20" rx="2"/><line x1="12" y1="18" x2="12.01" y2="18"/></svg>
+        VPN issue
+      </button>
+      <button class="chip" onclick="useChip('I am locked out of my account')">
+        <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="11" width="18" height="11" rx="2"/><path d="M7 11V7a5 5 0 0 1 10 0v4"/></svg>
+        Account locked
+      </button>
+      <button class="chip" onclick="useChip('My computer is not working properly')">
+        <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="2" y="3" width="20" height="14" rx="2"/><line x1="8" y1="21" x2="16" y2="21"/><line x1="12" y1="17" x2="12" y2="21"/></svg>
+        Hardware problem
+      </button>
+      <button class="chip" onclick="useChip('My internet connection is slow or not working')">
+        <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M5 12.55a11 11 0 0 1 14.08 0"/><path d="M1.42 9a16 16 0 0 1 21.16 0"/><path d="M8.53 16.11a6 6 0 0 1 6.95 0"/><line x1="12" y1="20" x2="12.01" y2="20"/></svg>
+        Network issue
+      </button>
+      <button class="chip" onclick="useChip('I need to request access to a system')">
+        <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/></svg>
+        Access request
+      </button>
+      <button class="chip" onclick="useChip('I want to set up a new employee')">
+        <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"/><circle cx="12" cy="7" r="4"/></svg>
+        New hire onboarding
+      </button>
+    </div>
+  </div>
+
+</div>
+
+<!-- ═══════════════════════════════════════════ INPUT BAR ═══ -->
+<div class="flex-shrink-0 px-4 pb-4 pt-2" style="background:#0d1117">
+  <div class="flex items-center gap-2 rounded-2xl px-4 py-2.5 border"
+       style="background:#161b22;border-color:#30363d;box-shadow:0 0 0 0 transparent;transition:box-shadow 0.15s"
+       id="input-wrap">
     <input
       id="msg-input"
       type="text"
       placeholder="Describe your IT issue…"
-      class="flex-1 bg-gray-800 text-gray-100 rounded-xl px-4 py-2.5 text-sm outline-none border border-gray-700 focus:border-blue-500 transition-colors"
       autocomplete="off"
+      class="flex-1 bg-transparent text-sm outline-none"
+      style="color:#e6edf3;caret-color:#388bfd"
     />
-    <button
-      id="send-btn"
-      onclick="sendMessage()"
-      class="bg-blue-600 hover:bg-blue-700 text-white rounded-xl px-4 py-2.5 text-sm font-semibold transition-colors disabled:opacity-50"
-    >Send</button>
+    <button id="send-btn"
+      class="flex-shrink-0 w-8 h-8 rounded-xl flex items-center justify-center transition-all disabled:opacity-40"
+      style="background:#1f6feb"
+    >
+      <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="white" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
+        <line x1="22" y1="2" x2="11" y2="13"/><polygon points="22 2 15 22 11 13 2 9 22 2"/>
+      </svg>
+    </button>
   </div>
+  <p class="text-center text-xs mt-2" style="color:#484f58">DeskFlow uses on-device AI — your data never leaves your browser.</p>
+</div>
 
-<script>
-// ------------------------------------------------------------------ //
-// Utilities                                                           //
-// ------------------------------------------------------------------ //
+<!-- ═══════════════════════════════════════════ WebGPU MODULE ═══ -->
+<script type="module">
+import { pipeline, TextStreamer, env } from 'https://cdn.jsdelivr.net/npm/@huggingface/transformers@3.5.0/dist/transformers.min.js';
 
-const messages = document.getElementById('messages');
-const msgInput = document.getElementById('msg-input');
-const sendBtn  = document.getElementById('send-btn');
-
-msgInput.addEventListener('keydown', e => { if (e.key === 'Enter' && !e.shiftKey) sendMessage(); });
-
-function scrollBottom() {
-  messages.scrollTop = messages.scrollHeight;
+env.allowLocalModels = false;
+if (env.backends?.onnx?.wasm) {
+  env.backends.onnx.wasm.numThreads = 1;
+  env.backends.onnx.wasm.wasmPaths = 'https://cdn.jsdelivr.net/npm/onnxruntime-web/dist/';
 }
 
-function addBubble(html, side = 'bot', extraClass = '') {
-  const wrap = document.createElement('div');
-  wrap.className = `flex ${side === 'user' ? 'justify-end' : 'justify-start'}`;
+const MODEL_ID = 'LiquidAI/LFM2.5-350M-ONNX';
+const DTYPE    = 'q4';
+
+window._llm = { status: 'idle', generator: null, error: null };
+
+const statusEl     = document.getElementById('model-status');
+const progressWrap = document.getElementById('model-progress-wrap');
+const progressBar  = document.getElementById('model-progress-bar');
+const statusWrap   = document.getElementById('model-status-wrap');
+
+function setStatusUI(text, color, progress) {
+  statusEl.textContent  = text;
+  statusEl.style.color  = color;
+  if (progress != null) {
+    progressWrap.classList.remove('hidden');
+    progressBar.style.width = Math.round(progress) + '%';
+  } else {
+    progressWrap.classList.add('hidden');
+  }
+}
+
+if (!navigator.gpu) {
+  window._llm.status = 'unavailable';
+  setStatusUI('⚠️ Templates only (no WebGPU)', '#d29922', null);
+  setTimeout(() => statusWrap.classList.add('hidden'), 4000);
+} else {
+  setStatusUI('⏳ Loading AI…', '#d29922', 0);
+  progressWrap.classList.remove('hidden');
+
+  (async () => {
+    window._llm.status = 'loading';
+    try {
+      window._llm.generator = await pipeline('text-generation', MODEL_ID, {
+        dtype: DTYPE,
+        device: 'webgpu',
+        progress_callback: (p) => {
+          if (p.status !== 'progress') return;
+          const pct = p.progress ?? 0;
+          setStatusUI(`⏳ Loading AI… ${Math.round(pct)}%`, '#d29922', pct);
+        },
+      });
+      window._llm.status = 'ready';
+      setStatusUI('✅ AI model ready', '#3fb950', null);
+      setTimeout(() => statusWrap.classList.add('hidden'), 3000);
+    } catch (err) {
+      console.error('[DeskFlow] Model load failed:', err);
+      window._llm.status = 'error';
+      window._llm.error  = err.message;
+      setStatusUI('⚠️ Templates only (AI unavailable)', '#d29922', null);
+      setTimeout(() => statusWrap.classList.add('hidden'), 5000);
+    }
+  })();
+}
+
+window._llmGenerate = async function(systemPrompt, userPrompt, templateResponse, onToken, onDone, onFallback) {
+  if (!window._llm.generator || window._llm.status !== 'ready') {
+    onFallback(templateResponse);
+    return;
+  }
+  const messages = [
+    { role: 'system', content: systemPrompt },
+    { role: 'user',   content: userPrompt   },
+  ];
+  let accumulated = '';
+  const streamer = new TextStreamer(window._llm.generator.tokenizer, {
+    skip_prompt: true,
+    skip_special_tokens: true,
+    callback_function: (chunk) => { accumulated += chunk; onToken(accumulated); },
+  });
+  try {
+    await window._llm.generator(messages, { max_new_tokens: 512, streamer, do_sample: false });
+    onDone(accumulated || templateResponse);
+  } catch (err) {
+    console.error('[DeskFlow] Inference error:', err);
+    onFallback(templateResponse);
+  }
+};
+</script>
+
+<!-- ═══════════════════════════════════════════ MAIN UI ═══ -->
+<script>
+const messagesEl = document.getElementById('messages');
+const msgInput   = document.getElementById('msg-input');
+const sendBtn    = document.getElementById('send-btn');
+const inputWrap  = document.getElementById('input-wrap');
+const emptyState = document.getElementById('empty-state');
+
+// Input focus ring
+msgInput.addEventListener('focus',  () => inputWrap.style.boxShadow = '0 0 0 3px rgba(56,139,253,0.25)');
+msgInput.addEventListener('blur',   () => inputWrap.style.boxShadow = '0 0 0 0 transparent');
+msgInput.addEventListener('keydown', e => { if (e.key === 'Enter' && !e.shiftKey) sendMessage(); });
+sendBtn.addEventListener('click', sendMessage);
+
+function useChip(text) {
+  msgInput.value = text;
+  msgInput.focus();
+  sendMessage();
+}
+
+function hideEmptyState() {
+  if (emptyState) emptyState.style.display = 'none';
+}
+
+function scrollBottom() {
+  messagesEl.scrollTop = messagesEl.scrollHeight;
+}
+
+// Bot row = avatar + bubble
+function addBotRow(innerHTML, extraBubbleClass = '') {
+  const row = document.createElement('div');
+  row.className = 'flex items-start gap-3 max-w-3xl';
+
+  const avatar = document.createElement('div');
+  avatar.className = 'w-7 h-7 rounded-lg flex-shrink-0 flex items-center justify-center mt-0.5';
+  avatar.style.cssText = 'background:linear-gradient(135deg,#1f6feb,#388bfd)';
+  avatar.innerHTML = `<svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="white" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M9 17H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2v3"/><path d="M13 21l2-2 4 4 2-2-4-4 2-2-6-1z"/></svg>`;
 
   const bubble = document.createElement('div');
-  bubble.className = [
-    'max-w-2xl rounded-2xl px-4 py-3 text-sm leading-relaxed',
-    side === 'user'
-      ? 'bg-blue-600 text-white rounded-br-sm'
-      : 'bg-gray-800 text-gray-200 rounded-bl-sm',
-    extraClass,
-  ].join(' ');
-  bubble.innerHTML = html;
-  wrap.appendChild(bubble);
-  messages.appendChild(wrap);
+  bubble.className = 'rounded-2xl rounded-tl-sm px-4 py-3 text-sm leading-relaxed flex-1 ' + extraBubbleClass;
+  bubble.style.cssText = 'background:#1c2128;border:1px solid #30363d;color:#adbac7;max-width:44rem';
+  bubble.innerHTML = innerHTML;
+
+  row.appendChild(avatar);
+  row.appendChild(bubble);
+
+  const wrap = document.createElement('div');
+  wrap.className = 'flex justify-start';
+  wrap.appendChild(row);
+  messagesEl.appendChild(wrap);
   scrollBottom();
   return bubble;
 }
 
 function addUserBubble(text) {
-  addBubble(escapeHtml(text), 'user');
-}
-
-function addTyping() {
-  return addBubble('<div class="typing"><span></span><span></span><span></span></div>', 'bot');
-}
-
-function addMarkdownBubble(md) {
-  const html = marked.parse(md);
-  addBubble(`<div class="md-body">${html}</div>`, 'bot');
+  hideEmptyState();
+  const wrap = document.createElement('div');
+  wrap.className = 'flex justify-end';
+  const bubble = document.createElement('div');
+  bubble.className = 'rounded-2xl rounded-tr-sm px-4 py-3 text-sm leading-relaxed';
+  bubble.style.cssText = 'background:linear-gradient(135deg,#1f6feb,#388bfd);color:white;max-width:32rem';
+  bubble.textContent = text;
+  wrap.appendChild(bubble);
+  messagesEl.appendChild(wrap);
+  scrollBottom();
 }
 
 function addTextBubble(text) {
-  addBubble(escapeHtml(text), 'bot');
+  addBotRow(`<span style="color:#adbac7">${escapeHtml(text)}</span>`);
+}
+
+function addTyping() {
+  return addBotRow('<div class="flex items-center gap-1.5 py-1"><span class="typing-dot"></span><span class="typing-dot"></span><span class="typing-dot"></span></div>');
+}
+
+function addMarkdownBubble(md) {
+  addBotRow(`<div class="md-body">${marked.parse(md)}</div>`);
+}
+
+function createStreamingBubble() {
+  const bubble = addBotRow('<div class="md-body streaming-cursor"></div>');
+  const inner  = bubble.querySelector('.md-body');
+  return {
+    update(md) { inner.className = 'md-body streaming-cursor'; inner.innerHTML = marked.parse(md); scrollBottom(); },
+    done(md)   { inner.className = 'md-body'; inner.innerHTML = marked.parse(md || ''); scrollBottom(); },
+    remove()   { bubble.closest('.flex.justify-start').remove(); },
+  };
 }
 
 function escapeHtml(s) {
@@ -163,94 +441,66 @@ function escapeHtml(s) {
 }
 
 function setLoading(on) {
-  sendBtn.disabled = on;
+  sendBtn.disabled  = on;
   msgInput.disabled = on;
+  sendBtn.style.opacity = on ? '0.4' : '1';
 }
 
-// ------------------------------------------------------------------ //
-// Model status polling                                                //
-// ------------------------------------------------------------------ //
-
-let modelReady = false;
-const statusEl = document.getElementById('model-status');
-statusEl.classList.remove('hidden');
-
-async function pollModelStatus() {
-  try {
-    const r = await fetch('/api/model-status');
-    const d = await r.json();
-    if (d.loaded) {
-      modelReady = true;
-      statusEl.textContent = '✅ AI model ready';
-      statusEl.className = 'ml-auto text-xs text-green-400';
-      setTimeout(() => statusEl.classList.add('hidden'), 3000);
-    } else {
-      setTimeout(pollModelStatus, 4000);
-    }
-  } catch {
-    setTimeout(pollModelStatus, 5000);
-  }
-}
-pollModelStatus();
-
-// ------------------------------------------------------------------ //
-// Send message                                                        //
-// ------------------------------------------------------------------ //
-
+// ── Send message ──────────────────────────────────────────────────── //
 async function sendMessage() {
   const text = msgInput.value.trim();
   if (!text) return;
 
+  hideEmptyState();
   addUserBubble(text);
   msgInput.value = '';
   setLoading(true);
 
-  const typing = addTyping();
+  const typingBubble = addTyping();
 
   try {
-    const res = await fetch('/api/message', {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
+    const res  = await fetch('/api/message', {
+      method: 'POST', headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({ message: text }),
     });
     const data = await res.json();
-    typing.closest('div').remove();
-
-    // Show intro
+    typingBubble.closest('.flex.justify-start').remove();
     addTextBubble(data.intro);
-    // Inject form
     injectForm(data.form_html, data.intent);
-  } catch (err) {
-    typing.closest('div').remove();
+  } catch (_err) {
+    typingBubble.closest('.flex.justify-start').remove();
     addTextBubble('Sorry, something went wrong. Please try again.');
   } finally {
     setLoading(false);
   }
 }
 
-// ------------------------------------------------------------------ //
-// Form injection + submission                                         //
-// ------------------------------------------------------------------ //
-
+// ── Form injection ────────────────────────────────────────────────── //
 function injectForm(formHtml, intent) {
-  const wrap = document.createElement('div');
-  wrap.className = 'flex justify-start';
+  const outer = document.createElement('div');
+  outer.className = 'flex items-start gap-3 max-w-3xl';
+
+  const avatar = document.createElement('div');
+  avatar.className = 'w-7 h-7 rounded-lg flex-shrink-0 flex items-center justify-center mt-0.5 invisible';
+  outer.appendChild(avatar);
 
   const bubble = document.createElement('div');
-  bubble.className = 'form-bubble bg-gray-800 rounded-2xl rounded-bl-sm px-5 py-4 text-sm w-full max-w-2xl';
+  bubble.className = 'form-bubble rounded-2xl rounded-tl-sm px-5 py-4 text-sm flex-1';
+  bubble.style.cssText = 'background:#1c2128;border:1px solid #30363d;max-width:44rem';
   bubble.innerHTML = formHtml;
-  wrap.appendChild(bubble);
-  messages.appendChild(wrap);
+  outer.appendChild(bubble);
+
+  const wrap = document.createElement('div');
+  wrap.className = 'flex justify-start';
+  wrap.appendChild(outer);
+  messagesEl.appendChild(wrap);
   scrollBottom();
 
   const form = bubble.querySelector('form[data-formora]');
   if (!form) return;
 
-  // Multi-step wizard setup
   const steps = form.querySelectorAll('.formora-step');
-  if (steps.length > 1) {
-    setupStepWizard(form, steps);
-  }
+  if (steps.length > 1) setupStepWizard(form, steps);
 
   form.addEventListener('submit', async (e) => {
     e.preventDefault();
@@ -258,26 +508,58 @@ function injectForm(formHtml, intent) {
     if (submitBtn) { submitBtn.disabled = true; submitBtn.textContent = 'Submitting…'; }
 
     const formData = collectFormData(form);
-    const formId = form.id;
+    const formId   = form.id;
 
-    const typing = addTyping();
+    const typingBubble = addTyping();
+    let apiData;
     try {
       const res = await fetch('/api/submit', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
+        method: 'POST', headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ form_id: formId, data: formData }),
       });
-      const data = await res.json();
-      typing.closest('div').remove();
-      addMarkdownBubble(data.response);
-
-      // Collapse the form after submission
-      bubble.innerHTML = `<div class="text-green-400 text-xs font-semibold">✅ Form submitted — ${formId.replace(/_/g,' ')}</div>`;
-    } catch (err) {
-      typing.closest('div').remove();
+      apiData = await res.json();
+    } catch (_err) {
+      typingBubble.closest('.flex.justify-start').remove();
       addTextBubble('Failed to process your request. Please try again.');
       if (submitBtn) { submitBtn.disabled = false; submitBtn.textContent = 'Submit'; }
+      return;
     }
+
+    // Collapse form to a compact pill
+    bubble.style.cssText = 'max-width:44rem';
+    bubble.className = 'rounded-xl px-4 py-2 text-xs font-medium flex items-center gap-2';
+    bubble.style.cssText = 'background:#1c2128;border:1px solid #3fb95022;color:#3fb950;max-width:44rem';
+    bubble.innerHTML = `<svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><polyline points="20 6 9 17 4 12"/></svg> Submitted — ${formId.replace(/_/g,' ')}`;
+
+    typingBubble.closest('.flex.justify-start').remove();
+
+    async function resolveTicket(response, source) {
+      try {
+        await fetch('/api/resolve', {
+          method: 'POST', headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ ticket_id: apiData.ticket_id, form_id: formId, data: formData, response, source }),
+        });
+      } catch (err) { console.warn('[DeskFlow] /api/resolve failed:', err); }
+    }
+
+    const llmGenerate = window._llmGenerate;
+    if (typeof llmGenerate !== 'function') {
+      addMarkdownBubble(apiData.template_response);
+      resolveTicket(apiData.template_response, 'template');
+      return;
+    }
+
+    const streaming = createStreamingBubble();
+
+    llmGenerate(
+      apiData.system_prompt,
+      apiData.user_prompt,
+      apiData.template_response,
+      (acc)      => streaming.update(acc),
+      (final)    => { streaming.done(final); resolveTicket(final, 'webgpu'); },
+      (template) => { streaming.remove(); addMarkdownBubble(template); resolveTicket(template, 'template'); },
+    );
+
     scrollBottom();
   });
 }
@@ -286,64 +568,52 @@ function collectFormData(form) {
   const data = {};
   form.querySelectorAll('input, select, textarea').forEach(field => {
     if (!field.name) return;
-    if (field.type === 'checkbox') {
-      data[field.name] = field.checked;
-    } else if (field.tagName === 'SELECT' && field.multiple) {
+    if (field.type === 'checkbox') data[field.name] = field.checked;
+    else if (field.tagName === 'SELECT' && field.multiple)
       data[field.name] = Array.from(field.selectedOptions).map(o => o.value);
-    } else {
-      if (field.value !== '') data[field.name] = field.value;
-    }
+    else if (field.value !== '') data[field.name] = field.value;
   });
   return data;
 }
 
+// ── Step wizard ───────────────────────────────────────────────────── //
 function setupStepWizard(form, steps) {
   let current = 0;
-
-  // Activate first step
   steps[0].classList.add('active');
-
-  // Hide the global submit button initially
   const submitBtn = form.querySelector('button[type=submit]');
   if (submitBtn) submitBtn.style.display = 'none';
 
   function renderNav() {
-    // Remove old nav
-    form.querySelectorAll('.step-nav, .step-indicator').forEach(el => el.remove());
+    form.querySelectorAll('.step-nav, .step-progress').forEach(el => el.remove());
+
+    // Progress pips
+    const pips = document.createElement('div');
+    pips.className = 'step-progress';
+    steps.forEach((_, i) => {
+      const pip = document.createElement('div');
+      pip.className = 'step-pip' + (i <= current ? ' active' : '');
+      pips.appendChild(pip);
+    });
+    form.appendChild(pips);
 
     const nav = document.createElement('div');
     nav.className = 'step-nav';
 
     if (current > 0) {
       const back = document.createElement('button');
-      back.type = 'button';
-      back.className = 'btn-back';
-      back.textContent = '← Back';
+      back.type = 'button'; back.className = 'btn-back'; back.textContent = '← Back';
       back.onclick = () => goStep(current - 1);
       nav.appendChild(back);
     }
-
     if (current < steps.length - 1) {
       const next = document.createElement('button');
-      next.type = 'button';
-      next.className = 'btn-next';
-      next.textContent = 'Next →';
+      next.type = 'button'; next.className = 'btn-next'; next.textContent = 'Continue →';
       next.onclick = () => goStep(current + 1);
       nav.appendChild(next);
     } else {
-      // Last step: show submit
-      if (submitBtn) {
-        submitBtn.style.display = 'block';
-        submitBtn.style.marginTop = '1rem';
-      }
+      if (submitBtn) { submitBtn.style.display = 'block'; submitBtn.style.marginTop = '1rem'; }
     }
-
     form.appendChild(nav);
-
-    const indicator = document.createElement('div');
-    indicator.className = 'step-indicator';
-    indicator.textContent = `Step ${current + 1} of ${steps.length}`;
-    form.appendChild(indicator);
   }
 
   function goStep(n) {
@@ -351,8 +621,7 @@ function setupStepWizard(form, steps) {
     if (submitBtn && current === steps.length - 1) submitBtn.style.display = 'none';
     current = n;
     steps[current].classList.add('active');
-    renderNav();
-    scrollBottom();
+    renderNav(); scrollBottom();
   }
 
   renderNav();
