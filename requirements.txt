@@ -1,0 +1,10 @@
+formora
+chainlit
+onnxruntime
+transformers
+optimum[onnxruntime]
+python-dotenv
+rich
+pypdf
+scikit-learn
+numpy
