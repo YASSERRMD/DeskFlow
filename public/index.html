@@ -29,6 +29,10 @@
     .md-body td { padding: 5px 10px; border: 1px solid #374151; }
     .md-body hr { border-color: #374151; margin: 0.5rem 0; }
 
+    /* Streaming cursor */
+    .streaming-cursor::after { content: '▌'; animation: blink-cursor 0.8s infinite; color: #60a5fa; }
+    @keyframes blink-cursor { 0%,100%{opacity:1} 50%{opacity:0} }
+
     /* Typing indicator */
     .typing span { display: inline-block; width: 7px; height: 7px; border-radius: 50%; background: #6b7280; animation: blink 1.2s infinite; }
     .typing span:nth-child(2) { animation-delay: 0.2s; }
@@ -73,6 +77,9 @@
     .btn-back { background: #374151; color: #d1d5db; }
     .btn-next { background: #2563eb; color: white; }
     .step-indicator { font-size: 0.75rem; color: #6b7280; text-align: center; margin-top: 0.5rem; }
+
+    /* Model progress bar */
+    #model-progress-bar { transition: width 0.3s ease; }
   </style>
 </head>
 
@@ -85,7 +92,13 @@
       <div class="font-semibold text-white text-sm">DeskFlow</div>
       <div class="text-xs text-gray-400">AI-powered IT Helpdesk</div>
     </div>
-    <div id="model-status" class="ml-auto text-xs text-yellow-400 hidden">⏳ Loading AI model…</div>
+    <!-- Model status badge -->
+    <div id="model-status-wrap" class="ml-auto flex flex-col items-end gap-1">
+      <div id="model-status" class="text-xs text-yellow-400">⏳ Loading AI model…</div>
+      <div id="model-progress-wrap" class="w-48 h-1 bg-gray-700 rounded-full hidden">
+        <div id="model-progress-bar" class="h-1 bg-blue-500 rounded-full" style="width:0%"></div>
+      </div>
+    </div>
   </header>
 
   <!-- Messages -->
@@ -102,30 +115,134 @@
     />
     <button
       id="send-btn"
-      onclick="sendMessage()"
       class="bg-blue-600 hover:bg-blue-700 text-white rounded-xl px-4 py-2.5 text-sm font-semibold transition-colors disabled:opacity-50"
     >Send</button>
   </div>
 
-<script>
-// ------------------------------------------------------------------ //
-// Utilities                                                           //
-// ------------------------------------------------------------------ //
+<!-- ---------------------------------------------------------------- -->
+<!-- WebGPU LLM — loaded as an ES module                              -->
+<!-- ---------------------------------------------------------------- -->
+<script type="module">
+import { pipeline, TextStreamer } from 'https://cdn.jsdelivr.net/npm/@huggingface/transformers@3/dist/transformers.min.js';
 
-const messages = document.getElementById('messages');
-const msgInput = document.getElementById('msg-input');
-const sendBtn  = document.getElementById('send-btn');
+const MODEL_ID  = 'LiquidAI/LFM2.5-350M-ONNX';
+const DTYPE     = 'q4';
+
+// Shared state exposed to the non-module script via window
+window._llm = {
+  status:    'idle',   // idle | loading | ready | error | unavailable
+  generator: null,
+  error:     null,
+};
+
+const statusEl      = document.getElementById('model-status');
+const progressWrap  = document.getElementById('model-progress-wrap');
+const progressBar   = document.getElementById('model-progress-bar');
+
+function setStatusUI(text, cls, progress) {
+  statusEl.textContent  = text;
+  statusEl.className    = `text-xs ${cls}`;
+  if (progress != null) {
+    progressWrap.classList.remove('hidden');
+    progressBar.style.width = `${Math.round(progress)}%`;
+  } else {
+    progressWrap.classList.add('hidden');
+  }
+}
+
+// Check WebGPU availability
+if (!navigator.gpu) {
+  window._llm.status = 'unavailable';
+  setStatusUI('⚠️ WebGPU unavailable — using templates', 'text-orange-400', null);
+} else {
+  setStatusUI('⏳ Loading AI model…', 'text-yellow-400', 0);
+  progressWrap.classList.remove('hidden');
+
+  (async () => {
+    window._llm.status = 'loading';
+    try {
+      window._llm.generator = await pipeline('text-generation', MODEL_ID, {
+        dtype: DTYPE,
+        device: 'webgpu',
+        progress_callback: (p) => {
+          if (p.status !== 'progress') return;
+          const pct = p.progress ?? 0;
+          setStatusUI(`⏳ Loading AI model… ${Math.round(pct)}%`, 'text-yellow-400', pct);
+        },
+      });
+      window._llm.status = 'ready';
+      setStatusUI('✅ AI model ready', 'text-green-400', null);
+      setTimeout(() => {
+        document.getElementById('model-status-wrap').classList.add('hidden');
+      }, 3000);
+    } catch (err) {
+      console.error('[DeskFlow] Model load failed:', err);
+      window._llm.status = 'error';
+      window._llm.error  = err.message;
+      setStatusUI('⚠️ AI model failed — using templates', 'text-orange-400', null);
+    }
+  })();
+}
+
+/**
+ * Generate a response using WebGPU.
+ * Calls onToken(accumulatedText) progressively, then onDone(finalText).
+ * Falls back to onFallback(templateResponse) if WebGPU is not ready.
+ */
+window._llmGenerate = async function (systemPrompt, userPrompt, templateResponse, onToken, onDone, onFallback) {
+  if (!window._llm.generator || window._llm.status !== 'ready') {
+    onFallback(templateResponse);
+    return;
+  }
+
+  const messages = [
+    { role: 'system', content: systemPrompt },
+    { role: 'user',   content: userPrompt   },
+  ];
+
+  let accumulated = '';
+
+  const streamer = new TextStreamer(window._llm.generator.tokenizer, {
+    skip_prompt:          true,
+    skip_special_tokens:  true,
+    callback_function: (chunk) => {
+      accumulated += chunk;
+      onToken(accumulated);
+    },
+  });
+
+  try {
+    await window._llm.generator(messages, {
+      max_new_tokens: 512,
+      streamer,
+      do_sample: false,
+    });
+    onDone(accumulated || templateResponse);
+  } catch (err) {
+    console.error('[DeskFlow] Inference error:', err);
+    onFallback(templateResponse);
+  }
+};
+</script>
+
+<!-- ---------------------------------------------------------------- -->
+<!-- Main UI logic                                                     -->
+<!-- ---------------------------------------------------------------- -->
+<script>
+const messagesEl = document.getElementById('messages');
+const msgInput   = document.getElementById('msg-input');
+const sendBtn    = document.getElementById('send-btn');
 
 msgInput.addEventListener('keydown', e => { if (e.key === 'Enter' && !e.shiftKey) sendMessage(); });
+sendBtn.addEventListener('click', sendMessage);
 
 function scrollBottom() {
-  messages.scrollTop = messages.scrollHeight;
+  messagesEl.scrollTop = messagesEl.scrollHeight;
 }
 
 function addBubble(html, side = 'bot', extraClass = '') {
-  const wrap = document.createElement('div');
+  const wrap   = document.createElement('div');
   wrap.className = `flex ${side === 'user' ? 'justify-end' : 'justify-start'}`;
-
   const bubble = document.createElement('div');
   bubble.className = [
     'max-w-2xl rounded-2xl px-4 py-3 text-sm leading-relaxed',
@@ -136,26 +253,39 @@ function addBubble(html, side = 'bot', extraClass = '') {
   ].join(' ');
   bubble.innerHTML = html;
   wrap.appendChild(bubble);
-  messages.appendChild(wrap);
+  messagesEl.appendChild(wrap);
   scrollBottom();
   return bubble;
 }
 
-function addUserBubble(text) {
-  addBubble(escapeHtml(text), 'user');
-}
-
-function addTyping() {
-  return addBubble('<div class="typing"><span></span><span></span><span></span></div>', 'bot');
-}
+function addUserBubble(text)   { addBubble(escapeHtml(text), 'user'); }
+function addTextBubble(text)   { addBubble(escapeHtml(text), 'bot'); }
+function addTyping()           { return addBubble('<div class="typing"><span></span><span></span><span></span></div>', 'bot'); }
 
 function addMarkdownBubble(md) {
   const html = marked.parse(md);
   addBubble(`<div class="md-body">${html}</div>`, 'bot');
 }
 
-function addTextBubble(text) {
-  addBubble(escapeHtml(text), 'bot');
+/** Create an empty streaming bubble; returns an object to update or finalise it. */
+function createStreamingBubble() {
+  const bubble = addBubble('<div class="md-body streaming-cursor"></div>', 'bot');
+  const inner  = bubble.querySelector('.md-body');
+  return {
+    update(md) {
+      inner.className = 'md-body streaming-cursor';
+      inner.innerHTML = marked.parse(md);
+      scrollBottom();
+    },
+    done(md) {
+      inner.className = 'md-body';
+      inner.innerHTML = marked.parse(md || '');
+      scrollBottom();
+    },
+    remove() {
+      bubble.closest('div').remove();
+    },
+  };
 }
 
 function escapeHtml(s) {
@@ -163,35 +293,9 @@ function escapeHtml(s) {
 }
 
 function setLoading(on) {
-  sendBtn.disabled = on;
+  sendBtn.disabled  = on;
   msgInput.disabled = on;
 }
-
-// ------------------------------------------------------------------ //
-// Model status polling                                                //
-// ------------------------------------------------------------------ //
-
-let modelReady = false;
-const statusEl = document.getElementById('model-status');
-statusEl.classList.remove('hidden');
-
-async function pollModelStatus() {
-  try {
-    const r = await fetch('/api/model-status');
-    const d = await r.json();
-    if (d.loaded) {
-      modelReady = true;
-      statusEl.textContent = '✅ AI model ready';
-      statusEl.className = 'ml-auto text-xs text-green-400';
-      setTimeout(() => statusEl.classList.add('hidden'), 3000);
-    } else {
-      setTimeout(pollModelStatus, 4000);
-    }
-  } catch {
-    setTimeout(pollModelStatus, 5000);
-  }
-}
-pollModelStatus();
 
 // ------------------------------------------------------------------ //
 // Send message                                                        //
@@ -208,19 +312,17 @@ async function sendMessage() {
   const typing = addTyping();
 
   try {
-    const res = await fetch('/api/message', {
-      method: 'POST',
+    const res  = await fetch('/api/message', {
+      method:  'POST',
       headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ message: text }),
+      body:    JSON.stringify({ message: text }),
     });
     const data = await res.json();
     typing.closest('div').remove();
 
-    // Show intro
     addTextBubble(data.intro);
-    // Inject form
     injectForm(data.form_html, data.intent);
-  } catch (err) {
+  } catch (_err) {
     typing.closest('div').remove();
     addTextBubble('Sorry, something went wrong. Please try again.');
   } finally {
@@ -233,24 +335,20 @@ async function sendMessage() {
 // ------------------------------------------------------------------ //
 
 function injectForm(formHtml, intent) {
-  const wrap = document.createElement('div');
+  const wrap   = document.createElement('div');
   wrap.className = 'flex justify-start';
-
   const bubble = document.createElement('div');
   bubble.className = 'form-bubble bg-gray-800 rounded-2xl rounded-bl-sm px-5 py-4 text-sm w-full max-w-2xl';
   bubble.innerHTML = formHtml;
   wrap.appendChild(bubble);
-  messages.appendChild(wrap);
+  messagesEl.appendChild(wrap);
   scrollBottom();
 
   const form = bubble.querySelector('form[data-formora]');
   if (!form) return;
 
-  // Multi-step wizard setup
   const steps = form.querySelectorAll('.formora-step');
-  if (steps.length > 1) {
-    setupStepWizard(form, steps);
-  }
+  if (steps.length > 1) setupStepWizard(form, steps);
 
   form.addEventListener('submit', async (e) => {
     e.preventDefault();
@@ -258,26 +356,55 @@ function injectForm(formHtml, intent) {
     if (submitBtn) { submitBtn.disabled = true; submitBtn.textContent = 'Submitting…'; }
 
     const formData = collectFormData(form);
-    const formId = form.id;
+    const formId   = form.id;
 
+    // Step 1: fetch context + prompts from server
     const typing = addTyping();
+    let apiData;
     try {
       const res = await fetch('/api/submit', {
-        method: 'POST',
+        method:  'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ form_id: formId, data: formData }),
+        body:    JSON.stringify({ form_id: formId, data: formData }),
       });
-      const data = await res.json();
-      typing.closest('div').remove();
-      addMarkdownBubble(data.response);
-
-      // Collapse the form after submission
-      bubble.innerHTML = `<div class="text-green-400 text-xs font-semibold">✅ Form submitted — ${formId.replace(/_/g,' ')}</div>`;
-    } catch (err) {
+      apiData = await res.json();
+    } catch (_err) {
       typing.closest('div').remove();
       addTextBubble('Failed to process your request. Please try again.');
       if (submitBtn) { submitBtn.disabled = false; submitBtn.textContent = 'Submit'; }
+      return;
     }
+
+    // Collapse the form immediately after we have the server response
+    bubble.innerHTML = `<div class="text-green-400 text-xs font-semibold">✅ Form submitted — ${formId.replace(/_/g,' ')}</div>`;
+
+    // Step 2: browser-side WebGPU inference (or fallback to template)
+    typing.closest('div').remove();
+
+    const llmGenerate = window._llmGenerate;
+    if (typeof llmGenerate !== 'function') {
+      // Module not yet parsed (extremely rare on slow connections)
+      addMarkdownBubble(apiData.template_response);
+      return;
+    }
+
+    const streaming = createStreamingBubble();
+
+    llmGenerate(
+      apiData.system_prompt,
+      apiData.user_prompt,
+      apiData.template_response,
+      // onToken — progressively update bubble
+      (accumulated) => streaming.update(accumulated),
+      // onDone — finalise
+      (final)       => streaming.done(final),
+      // onFallback — template response (WebGPU unavailable or failed)
+      (template)    => {
+        streaming.remove();
+        addMarkdownBubble(template);
+      },
+    );
+
     scrollBottom();
   });
 }
@@ -300,15 +427,12 @@ function collectFormData(form) {
 function setupStepWizard(form, steps) {
   let current = 0;
 
-  // Activate first step
   steps[0].classList.add('active');
 
-  // Hide the global submit button initially
   const submitBtn = form.querySelector('button[type=submit]');
   if (submitBtn) submitBtn.style.display = 'none';
 
   function renderNav() {
-    // Remove old nav
     form.querySelectorAll('.step-nav, .step-indicator').forEach(el => el.remove());
 
     const nav = document.createElement('div');
@@ -316,26 +440,18 @@ function setupStepWizard(form, steps) {
 
     if (current > 0) {
       const back = document.createElement('button');
-      back.type = 'button';
-      back.className = 'btn-back';
-      back.textContent = '← Back';
+      back.type = 'button'; back.className = 'btn-back'; back.textContent = '← Back';
       back.onclick = () => goStep(current - 1);
       nav.appendChild(back);
     }
 
     if (current < steps.length - 1) {
       const next = document.createElement('button');
-      next.type = 'button';
-      next.className = 'btn-next';
-      next.textContent = 'Next →';
+      next.type = 'button'; next.className = 'btn-next'; next.textContent = 'Next →';
       next.onclick = () => goStep(current + 1);
       nav.appendChild(next);
     } else {
-      // Last step: show submit
-      if (submitBtn) {
-        submitBtn.style.display = 'block';
-        submitBtn.style.marginTop = '1rem';
-      }
+      if (submitBtn) { submitBtn.style.display = 'block'; submitBtn.style.marginTop = '1rem'; }
     }
 
     form.appendChild(nav);
