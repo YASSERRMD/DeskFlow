@@ -69,6 +69,45 @@ _SYSTEM_PROMPTS: dict[str, str] = {
 }
 
 
+# ------------------------------------------------------------------ #
+# Chat-phase prompts (conversational acknowledgment before the form)   #
+# ------------------------------------------------------------------ #
+
+_CHAT_SYSTEM = (
+    "You are DeskFlow, a friendly IT support assistant. "
+    "Reply conversationally in 1–3 short sentences. "
+    "Do NOT provide technical steps yet — just respond naturally to what the user said."
+)
+
+_CHAT_TEMPLATES: dict[str, str] = {
+    "greeting":           "Hey! I'm DeskFlow, your IT support assistant. What can I help you with today?",
+    "vpn":                "VPN troubles — not fun! Let me grab a few details so I can point you in the right direction.",
+    "account":            "Account issues are stressful, but we'll get you sorted quickly. I just need a couple of details.",
+    "hardware":           "Sorry to hear about the hardware problem! Let me pull up a quick form to get the specifics.",
+    "software":           "Software gremlins! Let me ask you a few things so I can give you the right fix.",
+    "network":            "Connection problems are super frustrating. Give me a second — I've got a form that'll help me diagnose this.",
+    "email":              "Email issues can really slow you down. Let me get some details so I can help you fast.",
+    "access":             "On it! I'll need a few details to process your access request.",
+    "procurement":        "Happy to help with that purchase request. Let me pull up the right form for you.",
+    "onboarding":         "Welcome! Let's get everything set up properly. I have a short form that'll cover all the bases.",
+    "generic_incident":   "I'm here to help! Let me take down the details so I can find the best solution for you.",
+}
+
+
+def build_chat_system_prompt(intent: str) -> str:
+    """System prompt for the conversational chat phase (before the form)."""
+    return _CHAT_SYSTEM
+
+
+def chat_template_response(intent: str, user_message: str) -> str:
+    """Fallback chat reply when WebGPU is unavailable."""
+    return _CHAT_TEMPLATES.get(intent, _CHAT_TEMPLATES["generic_incident"])
+
+
+# ------------------------------------------------------------------ #
+# Resolution prompts (after form submission)                           #
+# ------------------------------------------------------------------ #
+
 def build_system_prompt(form_id: str, context: str, request_number: str = "") -> str:
     """Return the system prompt for the given form type, with RAG context embedded."""
     template = _SYSTEM_PROMPTS.get(form_id, _SYSTEM_PROMPTS["generic_incident"])

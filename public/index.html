@@ -457,22 +457,45 @@ async function sendMessage() {
   setLoading(true);
 
   const typingBubble = addTyping();
+  let apiData;
 
   try {
-    const res  = await fetch('/api/message', {
+    const res = await fetch('/api/message', {
       method: 'POST', headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({ message: text }),
     });
-    const data = await res.json();
-    typingBubble.closest('.flex.justify-start').remove();
-    addTextBubble(data.intro);
-    if (data.form_html) injectForm(data.form_html, data.intent);
+    apiData = await res.json();
   } catch (_err) {
     typingBubble.closest('.flex.justify-start').remove();
     addTextBubble('Sorry, something went wrong. Please try again.');
-  } finally {
+    setLoading(false);
+    return;
+  }
+
+  typingBubble.closest('.flex.justify-start').remove();
+
+  // After the LLM chat reply finishes, inject the form if the intent needs one
+  function afterChat() {
+    if (apiData.form_html) injectForm(apiData.form_html, apiData.intent);
     setLoading(false);
   }
+
+  const llmGenerate = window._llmGenerate;
+  if (typeof llmGenerate !== 'function') {
+    addTextBubble(apiData.template_response);
+    afterChat();
+    return;
+  }
+
+  const streaming = createStreamingBubble();
+  llmGenerate(
+    apiData.system_prompt,
+    apiData.user_prompt,
+    apiData.template_response,
+    (acc)      => streaming.update(acc),
+    (final)    => { streaming.done(final); afterChat(); },
+    (template) => { streaming.remove(); addTextBubble(template); afterChat(); },
+  );
 }
 
 // ── Form injection ────────────────────────────────────────────────── //
