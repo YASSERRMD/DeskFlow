@@ -415,7 +415,7 @@ function addUserBubble(text) {
 }
 
 function addTextBubble(text) {
-  addBotRow(`<span style="color:#adbac7">${escapeHtml(text)}</span>`);
+  return addBotRow(`<span style="color:#adbac7">${escapeHtml(text)}</span>`);
 }
 
 function addTyping() {
@@ -474,27 +474,41 @@ async function sendMessage() {
 
   typingBubble.closest('.flex.justify-start').remove();
 
-  // After the LLM chat reply finishes, inject the form if the intent needs one
-  function afterChat() {
-    if (apiData.form_html) injectForm(apiData.form_html, apiData.intent);
-    setLoading(false);
-  }
+  // 1. Show template response immediately — never block on LLM
+  const chatBubble = addTextBubble(apiData.template_response);
 
+  // 2. Show form immediately (don't wait for LLM)
+  if (apiData.form_html) {
+    injectForm(apiData.form_html, apiData.intent);
+  } else {
+    msgInput.focus();
+  }
+  setLoading(false);
+
+  // 3. Enhance chat bubble with LLM in the background (non-blocking)
   const llmGenerate = window._llmGenerate;
-  if (typeof llmGenerate !== 'function') {
-    addTextBubble(apiData.template_response);
-    afterChat();
-    return;
-  }
+  if (typeof llmGenerate !== 'function' || window._llm?.status !== 'ready') return;
 
-  const streaming = createStreamingBubble();
+  chatBubble.innerHTML = '<div class="md-body streaming-cursor"></div>';
+  const innerEl = chatBubble.querySelector('.md-body');
+
   llmGenerate(
     apiData.system_prompt,
     apiData.user_prompt,
     apiData.template_response,
-    (acc)      => streaming.update(acc),
-    (final)    => { streaming.done(final); afterChat(); },
-    (template) => { streaming.remove(); addTextBubble(template); afterChat(); },
+    (acc) => {
+      innerEl.className = 'md-body streaming-cursor';
+      innerEl.innerHTML = marked.parse(acc);
+      scrollBottom();
+    },
+    (final) => {
+      innerEl.className = 'md-body';
+      innerEl.innerHTML = marked.parse(final || apiData.template_response);
+      scrollBottom();
+    },
+    (_t) => {
+      chatBubble.textContent = apiData.template_response;
+    },
   );
 }
 

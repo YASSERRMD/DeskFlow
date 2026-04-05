@@ -12,6 +12,41 @@ from typing import Any
 
 
 # ------------------------------------------------------------------ #
+# Chat-phase prompts (conversational reply before form)                #
+# ------------------------------------------------------------------ #
+
+_CHAT_SYSTEM = (
+    "You are DeskFlow, a friendly IT support assistant. "
+    "Reply conversationally in 1–3 short sentences. "
+    "Do NOT provide technical steps yet — just respond naturally to what the user said."
+)
+
+_CHAT_TEMPLATES: dict[str, str] = {
+    "greeting":         "Hey! I'm DeskFlow, your IT support assistant. What can I help you with today?",
+    "vpn":              "VPN troubles — not fun! Let me grab a few details so I can get you sorted.",
+    "account":          "Account issues are stressful, I know. Let me help — just need a couple of details.",
+    "hardware":         "Hardware gremlins! Let's figure this out — fill in the quick form below.",
+    "software":         "Software being awkward? I've got you. A few quick questions first:",
+    "network":          "Connectivity issues are the worst. Let's get you back online — fill in the form below.",
+    "email":            "Email woes — always at the worst time! Let me help you sort it out.",
+    "access":           "Access requests sorted quickly — fill in the details below and I'll get it moving.",
+    "procurement":      "Happy to help with your purchase request. Let me take your details:",
+    "onboarding":       "Welcome! Let's get everything set up for you. Fill in the form below:",
+    "generic_incident": "On it! Tell me a bit more and I'll pull up the best fix for you:",
+}
+
+
+def build_chat_system_prompt(intent: str) -> str:
+    """Return the system prompt for the conversational chat phase."""
+    return _CHAT_SYSTEM
+
+
+def chat_template_response(intent: str, user_message: str) -> str:
+    """Return the template fallback for the chat phase (no LLM)."""
+    return _CHAT_TEMPLATES.get(intent, _CHAT_TEMPLATES["generic_incident"])
+
+
+# ------------------------------------------------------------------ #
 # System prompts per form type                                         #
 # ------------------------------------------------------------------ #
 
