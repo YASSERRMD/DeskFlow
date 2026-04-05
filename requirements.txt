@@ -1,5 +1,6 @@
 formora @ git+https://github.com/YASSERRMD/formora.git#subdirectory=formora-py
-chainlit
+fastapi
+uvicorn[standard]
 onnxruntime
 transformers
 optimum[onnxruntime]
