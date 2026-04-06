@@ -140,6 +140,18 @@
     /* Model progress bar */
     #model-progress-bar { transition: width 0.4s ease; }
 
+    /* Model switcher pills */
+    .model-pill {
+      background: #1c2128; border: 1px solid #30363d; border-radius: 20px;
+      padding: 3px 11px; font-size: 0.7rem; color: #8b949e; font-family: inherit;
+      cursor: pointer; transition: background .15s, border-color .15s, color .15s; white-space: nowrap;
+    }
+    .model-pill:hover:not(:disabled) { border-color: #58a6ff; color: #58a6ff; }
+    .model-pill.active {
+      background: rgba(56,139,253,0.12); border-color: #388bfd; color: #58a6ff; font-weight: 500;
+    }
+    .model-pill:disabled { opacity: 0.45; cursor: not-allowed; }
+
     /* Suggestion chips */
     .chip {
       display: inline-flex; align-items: center; gap: 6px;
@@ -172,6 +184,16 @@
       <div class="font-semibold text-white text-sm leading-tight">DeskFlow</div>
       <div class="text-xs" style="color:#8b949e">AI-powered IT Helpdesk</div>
     </div>
+  </div>
+
+  <!-- Model switcher -->
+  <div id="model-switcher" class="flex items-center gap-1.5 ml-4">
+    <button class="model-pill active"
+      data-model-id="HuggingFaceTB/SmolLM2-360M-Instruct"
+      data-model-label="SmolLM2-360M">SmolLM2</button>
+    <button class="model-pill"
+      data-model-id="LiquidAI/LFM2.5-350M-ONNX"
+      data-model-label="LFM2.5-350M">LFM2.5</button>
   </div>
 
   <!-- Model status -->
@@ -260,7 +282,7 @@
 
 <!-- ═══════════════════════════════════════════ WebGPU MODULE ═══ -->
 <script type="module">
-import { pipeline, TextStreamer, env } from 'https://cdn.jsdelivr.net/npm/@huggingface/transformers@3.5.0/dist/transformers.min.js';
+import { pipeline, TextStreamer, env } from 'https://cdn.jsdelivr.net/npm/@huggingface/transformers@3/dist/transformers.min.js';
 
 env.allowLocalModels = false;
 if (env.backends?.onnx?.wasm) {
@@ -268,10 +290,7 @@ if (env.backends?.onnx?.wasm) {
   env.backends.onnx.wasm.wasmPaths = 'https://cdn.jsdelivr.net/npm/onnxruntime-web/dist/';
 }
 
-const MODEL_ID = 'HuggingFaceTB/SmolLM2-360M-Instruct';
-const DTYPE    = 'q4';
-
-window._llm = { status: 'idle', generator: null, error: null };
+window._llm = { status: 'idle', generator: null, modelId: null };
 
 const statusEl     = document.getElementById('model-status');
 const progressWrap = document.getElementById('model-progress-wrap');
@@ -279,8 +298,8 @@ const progressBar  = document.getElementById('model-progress-bar');
 const statusWrap   = document.getElementById('model-status-wrap');
 
 function setStatusUI(text, color, progress) {
-  statusEl.textContent  = text;
-  statusEl.style.color  = color;
+  statusEl.textContent = text;
+  statusEl.style.color = color;
   if (progress != null) {
     progressWrap.classList.remove('hidden');
     progressBar.style.width = Math.round(progress) + '%';
@@ -289,62 +308,85 @@ function setStatusUI(text, color, progress) {
   }
 }
 
+function bindGenerate() {
+  window._llmGenerate = async function(systemPrompt, userPrompt, templateResponse, onToken, onDone, onFallback) {
+    if (!window._llm.generator || window._llm.status !== 'ready') {
+      onFallback(templateResponse); return;
+    }
+    const messages = [
+      { role: 'system', content: systemPrompt },
+      { role: 'user',   content: userPrompt   },
+    ];
+    let accumulated = '';
+    const streamer = new TextStreamer(window._llm.generator.tokenizer, {
+      skip_prompt: true,
+      skip_special_tokens: true,
+      callback_function: (chunk) => { accumulated += chunk; onToken(accumulated); },
+    });
+    // LFM2.5 requires num_logits_to_keep=1 as a mandatory ONNX graph input
+    const isLFM = (window._llm.modelId || '').includes('LFM');
+    try {
+      await window._llm.generator(messages, {
+        max_new_tokens: 512,
+        streamer,
+        do_sample: false,
+        ...(isLFM ? { num_logits_to_keep: 1 } : {}),
+      });
+      onDone(accumulated || templateResponse);
+    } catch (err) {
+      console.error('[DeskFlow] Inference error:', err);
+      onFallback(templateResponse);
+    }
+  };
+}
+
+async function loadModel(modelId, label, onComplete) {
+  window._llmGenerate = null;
+  window._llm.status  = 'loading';
+
+  if (window._llm.generator) {
+    try { await window._llm.generator.dispose(); } catch {}
+    window._llm.generator = null;
+  }
+
+  statusWrap.classList.remove('hidden');
+  setStatusUI(`⏳ Loading ${label}…`, '#d29922', 0);
+  progressWrap.classList.remove('hidden');
+
+  try {
+    window._llm.generator = await pipeline('text-generation', modelId, {
+      dtype: 'q4',
+      device: 'webgpu',
+      progress_callback: (p) => {
+        if (p.status !== 'progress') return;
+        const pct = p.progress ?? 0;
+        setStatusUI(`⏳ ${label} ${Math.round(pct)}%`, '#d29922', pct);
+      },
+    });
+    window._llm.status  = 'ready';
+    window._llm.modelId = modelId;
+    bindGenerate();
+    setStatusUI(`✅ ${label} ready`, '#3fb950', null);
+    setTimeout(() => statusWrap.classList.add('hidden'), 3000);
+  } catch (err) {
+    console.error('[DeskFlow] Model load failed:', err);
+    window._llm.status = 'error';
+    setStatusUI(`⚠️ ${label} unavailable — using templates`, '#d29922', null);
+    setTimeout(() => statusWrap.classList.add('hidden'), 5000);
+  }
+
+  onComplete?.();
+}
+
+window._llmSwitchModel = loadModel;
+
 if (!navigator.gpu) {
   window._llm.status = 'unavailable';
   setStatusUI('⚠️ Templates only (no WebGPU)', '#d29922', null);
   setTimeout(() => statusWrap.classList.add('hidden'), 4000);
 } else {
-  setStatusUI('⏳ Loading AI…', '#d29922', 0);
-  progressWrap.classList.remove('hidden');
-
-  (async () => {
-    window._llm.status = 'loading';
-    try {
-      window._llm.generator = await pipeline('text-generation', MODEL_ID, {
-        dtype: DTYPE,
-        device: 'webgpu',
-        progress_callback: (p) => {
-          if (p.status !== 'progress') return;
-          const pct = p.progress ?? 0;
-          setStatusUI(`⏳ Loading AI… ${Math.round(pct)}%`, '#d29922', pct);
-        },
-      });
-      window._llm.status = 'ready';
-      setStatusUI('✅ AI model ready', '#3fb950', null);
-      setTimeout(() => statusWrap.classList.add('hidden'), 3000);
-    } catch (err) {
-      console.error('[DeskFlow] Model load failed:', err);
-      window._llm.status = 'error';
-      window._llm.error  = err.message;
-      setStatusUI('⚠️ Templates only (AI unavailable)', '#d29922', null);
-      setTimeout(() => statusWrap.classList.add('hidden'), 5000);
-    }
-  })();
+  loadModel('HuggingFaceTB/SmolLM2-360M-Instruct', 'SmolLM2-360M', null);
 }
-
-window._llmGenerate = async function(systemPrompt, userPrompt, templateResponse, onToken, onDone, onFallback) {
-  if (!window._llm.generator || window._llm.status !== 'ready') {
-    onFallback(templateResponse);
-    return;
-  }
-  const messages = [
-    { role: 'system', content: systemPrompt },
-    { role: 'user',   content: userPrompt   },
-  ];
-  let accumulated = '';
-  const streamer = new TextStreamer(window._llm.generator.tokenizer, {
-    skip_prompt: true,
-    skip_special_tokens: true,
-    callback_function: (chunk) => { accumulated += chunk; onToken(accumulated); },
-  });
-  try {
-    await window._llm.generator(messages, { max_new_tokens: 512, streamer, do_sample: false });
-    onDone(accumulated || templateResponse);
-  } catch (err) {
-    console.error('[DeskFlow] Inference error:', err);
-    onFallback(templateResponse);
-  }
-};
 </script>
 
 <!-- ═══════════════════════════════════════════ MAIN UI ═══ -->
@@ -478,12 +520,18 @@ async function sendMessage() {
   const chatBubble = addTextBubble(apiData.template_response);
 
   // 2. Show form immediately (don't wait for LLM)
-  if (apiData.form_html) {
-    injectForm(apiData.form_html, apiData.intent);
+  const injectedBubble = apiData.form_html ? injectForm(apiData.form_html, apiData.intent) : null;
+  setLoading(false);
+
+  // Focus: first visible field in form, or back to chat input
+  if (injectedBubble) {
+    const firstField = injectedBubble.querySelector(
+      'input:not([type="hidden"]):not([disabled]), select:not([disabled]), textarea:not([disabled])'
+    );
+    firstField?.focus();
   } else {
     msgInput.focus();
   }
-  setLoading(false);
 
   // 3. Enhance chat bubble with LLM in the background (non-blocking)
   const llmGenerate = window._llmGenerate;
@@ -599,7 +647,28 @@ function injectForm(formHtml, intent) {
   }
 
   window.addEventListener('formora:submit', onFormoraSubmit);
+  return bubble;
 }
+
+// ── Model switcher ──────────────────────────────────────────────────── //
+document.querySelectorAll('.model-pill').forEach(pill => {
+  pill.addEventListener('click', () => {
+    if (pill.classList.contains('active')) return;
+    if (typeof window._llmSwitchModel !== 'function') return;
+
+    document.querySelectorAll('.model-pill').forEach(p => {
+      p.classList.remove('active');
+      p.disabled = true;
+    });
+    pill.classList.add('active');
+
+    window._llmSwitchModel(
+      pill.dataset.modelId,
+      pill.dataset.modelLabel,
+      () => document.querySelectorAll('.model-pill').forEach(p => { p.disabled = false; }),
+    );
+  });
+});
 
 // collectFormData and setupStepWizard removed:
 // formora-core now handles data collection and multi-step navigation
