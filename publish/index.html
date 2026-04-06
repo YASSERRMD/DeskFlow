@@ -1,0 +1,1557 @@
+<!DOCTYPE html>
+<html lang="en" class="dark">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>DeskFlow — IT Helpdesk</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+  <script src="https://cdn.tailwindcss.com"></script>
+  <script>
+    tailwind.config = {
+      darkMode: 'class',
+      theme: {
+        extend: {
+          fontFamily: { sans: ['Inter', 'system-ui', 'sans-serif'] },
+          colors: {
+            surface:  '#0d1117',
+            panel:    '#161b22',
+            card:     '#1c2128',
+            border:   '#30363d',
+            muted:    '#8b949e',
+            text:     '#adbac7',
+            bright:   '#e6edf3',
+            accent:   '#388bfd',
+            'accent-dark': '#1f6feb',
+            success:  '#3fb950',
+            danger:   '#f85149',
+            warning:  '#d29922',
+          }
+        }
+      }
+    }
+  </script>
+
+  <style>
+    /* ── formora.css ── */
+    .frm-wrapper {
+      font-family: 'Inter', system-ui, sans-serif;
+      font-size: 0.875rem;
+      color: #adbac7;
+      width: 100%;
+    }
+    .frm-title {
+      font-size: 0.95rem;
+      font-weight: 600;
+      color: #e6edf3;
+      margin-bottom: 4px;
+    }
+    .frm-desc {
+      font-size: 0.8rem;
+      color: #8b949e;
+      margin-bottom: 12px;
+    }
+    .frm-progress-label {
+      font-size: 0.75rem;
+      color: #8b949e;
+      margin-bottom: 4px;
+    }
+    .frm-progress-bar {
+      height: 4px;
+      background: #30363d;
+      border-radius: 2px;
+      margin-bottom: 16px;
+      overflow: hidden;
+    }
+    .frm-progress-fill {
+      height: 100%;
+      background: linear-gradient(90deg, #1f6feb, #388bfd);
+      border-radius: 2px;
+      transition: width 0.3s ease;
+    }
+    .frm-step-title {
+      font-size: 0.8rem;
+      font-weight: 600;
+      color: #58a6ff;
+      text-transform: uppercase;
+      letter-spacing: 0.05em;
+      margin-bottom: 10px;
+    }
+    .frm-field {
+      margin-bottom: 12px;
+    }
+    .frm-label {
+      display: block;
+      font-size: 0.8rem;
+      font-weight: 500;
+      color: #8b949e;
+      margin-bottom: 4px;
+    }
+    .frm-req {
+      color: #f85149;
+      margin-left: 2px;
+    }
+    .frm-input {
+      width: 100%;
+      background: #0d1117;
+      border: 1px solid #30363d;
+      border-radius: 6px;
+      color: #e6edf3;
+      font-size: 0.875rem;
+      font-family: inherit;
+      padding: 7px 10px;
+      box-sizing: border-box;
+      transition: border-color 0.15s, box-shadow 0.15s;
+      outline: none;
+      -webkit-appearance: none;
+      appearance: none;
+    }
+    .frm-input:focus {
+      border-color: #1f6feb;
+      box-shadow: 0 0 0 3px rgba(31, 111, 235, 0.15);
+    }
+    .frm-input.frm-invalid {
+      border-color: #f85149;
+      box-shadow: 0 0 0 3px rgba(248, 81, 73, 0.15);
+    }
+    .frm-textarea {
+      resize: vertical;
+      min-height: 80px;
+    }
+    .frm-select {
+      cursor: pointer;
+      background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='12' viewBox='0 0 24 24' fill='none' stroke='%238b949e' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpolyline points='6 9 12 15 18 9'/%3E%3C/svg%3E");
+      background-repeat: no-repeat;
+      background-position: right 10px center;
+      padding-right: 30px;
+    }
+    .frm-radio-group {
+      display: flex;
+      flex-direction: column;
+      gap: 6px;
+      margin-top: 4px;
+    }
+    .frm-radio-label {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      cursor: pointer;
+      font-size: 0.875rem;
+      color: #adbac7;
+    }
+    .frm-radio-label input[type="radio"] {
+      accent-color: #388bfd;
+      width: 14px;
+      height: 14px;
+      cursor: pointer;
+      flex-shrink: 0;
+    }
+    .frm-checkbox-label {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      cursor: pointer;
+      font-size: 0.875rem;
+      color: #adbac7;
+    }
+    .frm-checkbox-label input[type="checkbox"] {
+      accent-color: #388bfd;
+      width: 14px;
+      height: 14px;
+      cursor: pointer;
+      flex-shrink: 0;
+    }
+    .frm-error-msg {
+      font-size: 0.75rem;
+      color: #f85149;
+      margin-top: 3px;
+    }
+    .frm-actions,
+    .frm-nav {
+      display: flex;
+      gap: 8px;
+      margin-top: 16px;
+      justify-content: flex-end;
+    }
+    .frm-btn-submit,
+    .frm-btn-next {
+      background: linear-gradient(135deg, #1f6feb, #388bfd);
+      color: #fff;
+      border: none;
+      border-radius: 6px;
+      padding: 7px 16px;
+      font-size: 0.875rem;
+      font-weight: 500;
+      font-family: inherit;
+      cursor: pointer;
+      transition: opacity 0.15s;
+    }
+    .frm-btn-submit:hover,
+    .frm-btn-next:hover {
+      opacity: 0.88;
+    }
+    .frm-btn-back {
+      background: transparent;
+      color: #8b949e;
+      border: 1px solid #30363d;
+      border-radius: 6px;
+      padding: 7px 14px;
+      font-size: 0.875rem;
+      font-family: inherit;
+      cursor: pointer;
+      transition: border-color 0.15s, color 0.15s;
+    }
+    .frm-btn-back:hover {
+      border-color: #58a6ff;
+      color: #58a6ff;
+    }
+    .frm-success {
+      font-size: 0.875rem;
+      color: #3fb950;
+      background: rgba(63, 185, 80, 0.08);
+      border: 1px solid rgba(63, 185, 80, 0.2);
+      border-radius: 6px;
+      padding: 10px 14px;
+      margin-top: 8px;
+    }
+    .frm-select option {
+      background: #1c2128;
+      color: #e6edf3;
+    }
+
+    /* ── App styles ── */
+    * { box-sizing: border-box; }
+    body { margin: 0; background: #0d1117; color: #adbac7; font-family: 'Inter', system-ui, sans-serif; }
+    html, body, #root { height: 100%; }
+
+    ::-webkit-scrollbar { width: 6px; }
+    ::-webkit-scrollbar-track { background: transparent; }
+    ::-webkit-scrollbar-thumb { background: #30363d; border-radius: 3px; }
+
+    .typing-dot {
+      width: 6px; height: 6px; background: #58a6ff;
+      border-radius: 50%; animation: typing-bounce 1.2s infinite;
+    }
+    .typing-dot:nth-child(2) { animation-delay: 0.2s; }
+    .typing-dot:nth-child(3) { animation-delay: 0.4s; }
+    @keyframes typing-bounce {
+      0%,60%,100% { transform: translateY(0); opacity: 0.4; }
+      30% { transform: translateY(-4px); opacity: 1; }
+    }
+
+    .streaming-cursor::after {
+      content: '▋'; display: inline-block;
+      animation: blink 0.8s step-end infinite; color: #388bfd;
+    }
+    @keyframes blink { 0%,100% { opacity: 1; } 50% { opacity: 0; } }
+
+    .md-body h2 { font-size: 0.9rem; font-weight: 600; color: #e6edf3; margin: 0 0 8px; }
+    .md-body h3 { font-size: 0.85rem; font-weight: 600; color: #e6edf3; margin: 8px 0 4px; }
+    .md-body p  { margin: 4px 0; }
+    .md-body ol,.md-body ul { margin: 6px 0; padding-left: 18px; }
+    .md-body li { margin: 3px 0; }
+    .md-body strong { color: #e6edf3; font-weight: 600; }
+    .md-body code { background: #0d1117; border: 1px solid #30363d; border-radius: 3px; padding: 1px 5px; font-size: 0.8rem; color: #79c0ff; font-family: 'SF Mono', Consolas, monospace; }
+    .md-body blockquote { border-left: 3px solid #d29922; margin: 8px 0; padding: 4px 10px; background: rgba(210,153,34,0.07); border-radius: 0 4px 4px 0; color: #d29922; }
+    .md-body blockquote p { margin: 0; }
+
+    .ticket-pill {
+      display: inline-flex; align-items: center; gap: 6px;
+      background: rgba(56,139,253,0.1); border: 1px solid rgba(56,139,253,0.25);
+      border-radius: 20px; padding: 4px 12px; font-size: 0.75rem;
+      color: #58a6ff; cursor: default; user-select: none;
+    }
+
+    #model-progress-bar { transition: width 0.4s ease; }
+
+    .chip {
+      display: inline-flex; align-items: center; gap: 6px;
+      background: #1c2128; border: 1px solid #30363d; border-radius: 20px;
+      padding: 6px 14px; font-size: 0.8rem; color: #8b949e;
+      cursor: pointer; transition: border-color .15s, color .15s;
+      white-space: nowrap;
+    }
+    .chip:hover { border-color: #388bfd; color: #58a6ff; }
+
+    .inc-pill {
+      font-size: 0.7rem; color: #3fb950;
+      background: rgba(63,185,80,0.08); border: 1px solid rgba(63,185,80,0.2);
+      border-radius: 12px; padding: 2px 8px; display: inline-block; margin-bottom: 6px;
+    }
+  </style>
+</head>
+<body class="flex flex-col h-full">
+
+<!-- ── Header ────────────────────────────────────────────────────────────── -->
+<header class="flex items-center px-4 py-3 border-b shrink-0" style="background:#161b22;border-color:#21262d">
+  <div class="flex items-center gap-2.5">
+    <div class="w-8 h-8 rounded-xl flex items-center justify-center" style="background:linear-gradient(135deg,#1f6feb,#388bfd)">
+      <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="white" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
+        <path d="M9 17H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2v3"/>
+        <path d="M13 21l2-2 4 4 2-2-4-4 2-2-6-1z"/>
+      </svg>
+    </div>
+    <div>
+      <div class="font-semibold text-sm" style="color:#e6edf3">DeskFlow</div>
+      <div class="text-xs" style="color:#8b949e">IT Support Assistant</div>
+    </div>
+  </div>
+  <div id="model-status-wrap" class="ml-auto flex items-center gap-3">
+    <div id="model-progress-wrap" class="w-36 h-1 rounded-full hidden" style="background:#21262d">
+      <div id="model-progress-bar" class="h-1 rounded-full" style="width:0%;background:#388bfd"></div>
+    </div>
+    <div id="model-status" class="text-xs font-medium" style="color:#d29922">⏳ Loading AI…</div>
+  </div>
+</header>
+
+<!-- ── Chat area ─────────────────────────────────────────────────────────── -->
+<main id="messages" class="flex-1 overflow-y-auto px-4 py-6 flex flex-col gap-4">
+
+  <!-- Empty state -->
+  <div id="empty-state" class="flex flex-col items-center justify-center flex-1 gap-6 py-12">
+    <div class="w-16 h-16 rounded-2xl flex items-center justify-center" style="background:linear-gradient(135deg,#1f6feb,#388bfd)">
+      <svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="white" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+        <path d="M9 17H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2v3"/>
+        <path d="M13 21l2-2 4 4 2-2-4-4 2-2-6-1z"/>
+      </svg>
+    </div>
+    <div class="text-center">
+      <h2 class="text-lg font-semibold mb-1" style="color:#e6edf3">Hi, I'm DeskFlow</h2>
+      <p class="text-sm" style="color:#8b949e">Your AI-powered IT support assistant.<br/>Tell me what's going on — I'll help you fix it.</p>
+    </div>
+    <div class="flex flex-wrap gap-2 justify-center max-w-lg">
+      <button class="chip" data-msg="My VPN isn't connecting">🔒 VPN not connecting</button>
+      <button class="chip" data-msg="My account is locked">🔑 Account locked</button>
+      <button class="chip" data-msg="Laptop screen is broken">💻 Hardware issue</button>
+      <button class="chip" data-msg="Outlook is not working">📧 Email issue</button>
+      <button class="chip" data-msg="I need access to a shared drive">🗂️ Access request</button>
+      <button class="chip" data-msg="I'm a new joiner, need setup">👋 New joiner setup</button>
+    </div>
+  </div>
+
+</main>
+
+<!-- ── Input bar ─────────────────────────────────────────────────────────── -->
+<footer class="shrink-0 px-4 py-3 border-t" style="background:#161b22;border-color:#21262d">
+  <div class="flex items-end gap-2 max-w-3xl mx-auto">
+    <textarea id="msg-input" rows="1"
+      placeholder="Describe your IT issue…"
+      class="flex-1 resize-none rounded-xl px-4 py-3 text-sm outline-none transition"
+      style="background:#1c2128;border:1px solid #30363d;color:#e6edf3;max-height:140px;line-height:1.5;font-family:inherit"
+      oninput="this.style.height='auto';this.style.height=Math.min(this.scrollHeight,140)+'px'"
+    ></textarea>
+    <button id="send-btn" class="rounded-xl px-4 py-3 text-sm font-medium shrink-0 transition"
+      style="background:linear-gradient(135deg,#1f6feb,#388bfd);color:white;border:none;cursor:pointer">
+      <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
+        <line x1="22" y1="2" x2="11" y2="13"/><polygon points="22 2 15 22 11 13 2 9 22 2"/>
+      </svg>
+    </button>
+  </div>
+  <p class="text-center text-xs mt-2" style="color:#30363d">DeskFlow · Powered by WebGPU · All processing is local</p>
+</footer>
+
+<!-- ── Marked.js ─────────────────────────────────────────────────────────── -->
+<script src="https://cdn.jsdelivr.net/npm/marked@9/marked.min.js"></script>
+
+<!-- ── formora.js (inlined) ──────────────────────────────────────────────── -->
+<script>
+/**
+ * formora.js — JavaScript port of the formora form builder.
+ */
+
+const FORMORA_PREFIX = '__formora__';
+
+// ─── Validation Rules ────────────────────────────────────────────────────── //
+
+class Rule {
+  static required(msg = 'This field is required') {
+    return { type: 'required', message: msg };
+  }
+  static minLength(n, msg) {
+    return { type: 'minLength', value: n, message: msg || `Minimum ${n} characters required` };
+  }
+  static maxLength(n, msg) {
+    return { type: 'maxLength', value: n, message: msg || `Maximum ${n} characters allowed` };
+  }
+  static min(n, msg) {
+    return { type: 'min', value: n, message: msg || `Must be at least ${n}` };
+  }
+  static max(n, msg) {
+    return { type: 'max', value: n, message: msg || `Must be at most ${n}` };
+  }
+  static email(msg = 'Enter a valid email address') {
+    return { type: 'email', message: msg };
+  }
+  static regex(pattern, msg = 'Invalid format') {
+    return { type: 'regex', value: pattern, message: msg };
+  }
+}
+
+// ─── Condition for conditional field visibility ─────────────────────────── //
+
+class Condition {
+  constructor(fieldId, operator, value) {
+    this.fieldId  = fieldId;
+    this.operator = operator;
+    this.value    = value;
+  }
+}
+
+// ─── Form Builder ────────────────────────────────────────────────────────── //
+
+class Form {
+  constructor(formId) {
+    this._id            = formId;
+    this._title         = null;
+    this._description   = null;
+    this._submitLabel   = 'Submit';
+    this._successMsg    = 'Thank you! Your request has been received.';
+    this._fields        = [];
+    this._steps         = [];
+    this._multiStep     = false;
+    this._currentStep   = null;
+  }
+
+  title(t)          { this._title = t;          return this; }
+  description(d)    { this._description = d;    return this; }
+  submitLabel(l)    { this._submitLabel = l;     return this; }
+  successMessage(m) { this._successMsg = m;      return this; }
+
+  step(title = null) {
+    this._multiStep = true;
+    this._steps.push({ title });
+    this._currentStep = this._steps.length - 1;
+    return this;
+  }
+
+  _add(field) {
+    field.stepIndex = this._multiStep ? this._currentStep : null;
+    this._fields.push(field);
+    return this;
+  }
+
+  text(id, label, { required = false, placeholder = '', rules = [], condition = null } = {}) {
+    return this._add({ type: 'text', id, label, required, placeholder, rules, condition });
+  }
+  email(id, label, { required = false, placeholder = '', rules = [], condition = null } = {}) {
+    return this._add({ type: 'email', id, label, required, placeholder, rules, condition });
+  }
+  number(id, label, { required = false, min = null, max = null, rules = [], condition = null } = {}) {
+    return this._add({ type: 'number', id, label, required, min, max, rules, condition });
+  }
+  textarea(id, label, { required = false, rows = 4, placeholder = '', rules = [], condition = null } = {}) {
+    return this._add({ type: 'textarea', id, label, required, rows, placeholder, rules, condition });
+  }
+  select(id, label, options, { required = false, rules = [], condition = null } = {}) {
+    const opts = options.map(o => Array.isArray(o) ? { label: o[0], value: o[1] } : { label: o, value: o });
+    return this._add({ type: 'select', id, label, required, options: opts, rules, condition });
+  }
+  radio(id, label, options, { required = false, condition = null } = {}) {
+    const opts = options.map(o => Array.isArray(o) ? { label: o[0], value: o[1] } : { label: o, value: o });
+    return this._add({ type: 'radio', id, label, required, options: opts, condition });
+  }
+  checkbox(id, label, { condition = null } = {}) {
+    return this._add({ type: 'checkbox', id, label, condition });
+  }
+  hidden(id, value) {
+    return this._add({ type: 'hidden', id, value });
+  }
+
+  build() {
+    return renderForm(this);
+  }
+}
+
+// ─── HTML Renderer ───────────────────────────────────────────────────────── //
+
+function _fEsc(s) {
+  return String(s)
+    .replace(/&/g, '&amp;')
+    .replace(/</g, '&lt;')
+    .replace(/>/g, '&gt;')
+    .replace(/"/g, '&quot;');
+}
+
+function renderRules(rules) {
+  return JSON.stringify(rules || []);
+}
+
+function renderCondition(cond) {
+  if (!cond) return '';
+  return `data-condition='${JSON.stringify(cond)}'`;
+}
+
+function renderField(f) {
+  const condAttr  = renderCondition(f.condition);
+  const rulesAttr = `data-rules='${renderRules(f.rules)}'`;
+  const req       = f.required ? 'required' : '';
+  const reqMark   = f.required ? '<span class="frm-req">*</span>' : '';
+  const wrapStyle = f.condition ? ' style="display:none"' : '';
+
+  const wrap = (inner) =>
+    `<div class="frm-field" data-field-id="${_fEsc(f.id)}" ${condAttr}${wrapStyle}>${inner}</div>`;
+
+  const label = `<label class="frm-label" for="${_fEsc(f.id)}">${_fEsc(f.label)}${reqMark}</label>`;
+
+  switch (f.type) {
+    case 'hidden':
+      return `<input type="hidden" id="${_fEsc(f.id)}" name="${_fEsc(f.id)}" value="${_fEsc(f.value)}" />`;
+    case 'text':
+    case 'email':
+      return wrap(`${label}
+        <input class="frm-input" type="${f.type}" id="${_fEsc(f.id)}" name="${_fEsc(f.id)}"
+          placeholder="${_fEsc(f.placeholder || '')}" ${req} ${rulesAttr} />`);
+    case 'number':
+      return wrap(`${label}
+        <input class="frm-input" type="number" id="${_fEsc(f.id)}" name="${_fEsc(f.id)}"
+          ${f.min != null ? `min="${f.min}"` : ''} ${f.max != null ? `max="${f.max}"` : ''}
+          ${req} ${rulesAttr} />`);
+    case 'textarea':
+      return wrap(`${label}
+        <textarea class="frm-input frm-textarea" id="${_fEsc(f.id)}" name="${_fEsc(f.id)}"
+          rows="${f.rows || 4}" placeholder="${_fEsc(f.placeholder || '')}" ${req} ${rulesAttr}></textarea>`);
+    case 'select':
+      return wrap(`${label}
+        <select class="frm-input frm-select" id="${_fEsc(f.id)}" name="${_fEsc(f.id)}" ${req} ${rulesAttr}>
+          <option value="">Select…</option>
+          ${f.options.map(o => `<option value="${_fEsc(o.value)}">${_fEsc(o.label)}</option>`).join('')}
+        </select>`);
+    case 'radio':
+      return wrap(`${label}
+        <div class="frm-radio-group">
+          ${f.options.map(o => `
+            <label class="frm-radio-label">
+              <input type="radio" name="${_fEsc(f.id)}" value="${_fEsc(o.value)}" ${req} />
+              <span>${_fEsc(o.label)}</span>
+            </label>`).join('')}
+        </div>`);
+    case 'checkbox':
+      return wrap(`<label class="frm-checkbox-label">
+        <input type="checkbox" id="${_fEsc(f.id)}" name="${_fEsc(f.id)}" />
+        <span>${_fEsc(f.label)}</span>
+      </label>`);
+    default:
+      return '';
+  }
+}
+
+function renderForm(form) {
+  const id = form._id;
+  const fields = form._fields;
+
+  if (form._multiStep && form._steps.length > 0) {
+    return renderMultiStep(form);
+  }
+
+  const fieldHtml = fields.map(renderField).join('\n');
+
+  return `
+<div class="frm-wrapper" data-formora-id="${_fEsc(id)}">
+  ${form._title ? `<div class="frm-title">${_fEsc(form._title)}</div>` : ''}
+  ${form._description ? `<div class="frm-desc">${_fEsc(form._description)}</div>` : ''}
+  <form class="frm-form" data-formora-id="${_fEsc(id)}" novalidate>
+    ${fieldHtml}
+    <div class="frm-actions">
+      <button type="submit" class="frm-btn-submit">${_fEsc(form._submitLabel)}</button>
+    </div>
+    <div class="frm-success" style="display:none">${_fEsc(form._successMsg)}</div>
+    <div class="frm-errors" style="display:none"></div>
+  </form>
+</div>`;
+}
+
+function renderMultiStep(form) {
+  const id     = form._id;
+  const steps  = form._steps;
+  const fields = form._fields;
+  const total  = steps.length;
+
+  const stepGroups = steps.map((_, i) => ({
+    title: steps[i].title,
+    fields: fields.filter(f => f.stepIndex === i),
+  }));
+
+  const stepsHtml = stepGroups.map((step, i) => `
+    <div class="frm-step" data-step="${i}" ${i > 0 ? 'style="display:none"' : ''}>
+      ${step.title ? `<div class="frm-step-title">${_fEsc(step.title)}</div>` : ''}
+      ${step.fields.map(renderField).join('\n')}
+    </div>`).join('\n');
+
+  return `
+<div class="frm-wrapper" data-formora-id="${_fEsc(id)}">
+  ${form._title ? `<div class="frm-title">${_fEsc(form._title)}</div>` : ''}
+  ${form._description ? `<div class="frm-desc">${_fEsc(form._description)}</div>` : ''}
+  <div class="frm-progress-label">Step 1 of ${total}</div>
+  <div class="frm-progress-bar"><div class="frm-progress-fill" id="${_fEsc(id)}-progress" style="width:${Math.round(100/total)}%"></div></div>
+  <form class="frm-form" data-formora-id="${_fEsc(id)}" novalidate>
+    ${stepsHtml}
+    <div class="frm-nav">
+      <button type="button" class="frm-btn-back" style="display:none">Back</button>
+      <button type="button" class="frm-btn-next">Next</button>
+      <button type="submit" class="frm-btn-submit" style="display:none">${_fEsc(form._submitLabel)}</button>
+    </div>
+    <div class="frm-success" style="display:none">${_fEsc(form._successMsg)}</div>
+    <div class="frm-errors" style="display:none"></div>
+  </form>
+</div>`;
+}
+
+// ─── Runtime: validation + submission ────────────────────────────────────── //
+
+function attachForms(container) {
+  container.querySelectorAll('form[data-formora-id]').forEach(form => {
+    _attachConditions(form);
+    _attachMultiStep(form);
+    form.addEventListener('submit', e => {
+      e.preventDefault();
+      if (!_validate(form)) return;
+      const result = _collect(form);
+      _showSuccess(form);
+      window.dispatchEvent(new CustomEvent('formora:submit', {
+        detail: { raw: result.toMessage(), parsed: result },
+      }));
+    });
+  });
+}
+
+function _attachConditions(form) {
+  const condFields = form.querySelectorAll('[data-condition]');
+  condFields.forEach(el => {
+    const cond = JSON.parse(el.dataset.condition);
+    const watch = form.querySelector(`[name="${CSS.escape(cond.fieldId)}"]`);
+    if (!watch) return;
+    const update = () => {
+      const val  = watch.value;
+      const show = _evalCondition(cond, val);
+      el.style.display = show ? '' : 'none';
+      if (!show) {
+        el.querySelectorAll('input,select,textarea').forEach(i => i.value = '');
+      }
+    };
+    watch.addEventListener('change', update);
+    watch.addEventListener('input', update);
+    update();
+  });
+}
+
+function _evalCondition(cond, val) {
+  switch (cond.operator) {
+    case 'eq':       return val === cond.value;
+    case 'neq':      return val !== cond.value;
+    case 'contains': return val.includes(cond.value);
+    case 'gt':       return parseFloat(val) > parseFloat(cond.value);
+    case 'lt':       return parseFloat(val) < parseFloat(cond.value);
+    default:         return true;
+  }
+}
+
+function _attachMultiStep(form) {
+  const stepEls = form.querySelectorAll('.frm-step');
+  if (!stepEls.length) return;
+
+  const total    = stepEls.length;
+  let current    = 0;
+  const formId   = form.getAttribute('data-formora-id') || form.closest('[data-formora-id]')?.getAttribute('data-formora-id') || '';
+  const progress = document.getElementById(`${formId}-progress`);
+  const label    = form.closest('.frm-wrapper')?.querySelector('.frm-progress-label');
+  const btnBack  = form.querySelector('.frm-btn-back');
+  const btnNext  = form.querySelector('.frm-btn-next');
+  const btnSub   = form.querySelector('.frm-btn-submit');
+
+  const goTo = (i) => {
+    stepEls[current].style.display = 'none';
+    current = i;
+    stepEls[current].style.display = '';
+    if (label)   label.textContent = `Step ${current + 1} of ${total}`;
+    if (progress) progress.style.width = `${Math.round((current + 1) * 100 / total)}%`;
+    if (btnBack)  btnBack.style.display  = current > 0 ? '' : 'none';
+    if (btnNext)  btnNext.style.display  = current < total - 1 ? '' : 'none';
+    if (btnSub)   btnSub.style.display   = current === total - 1 ? '' : 'none';
+  };
+
+  if (btnNext) btnNext.addEventListener('click', () => {
+    if (!_validate(form, stepEls[current])) return;
+    if (current < total - 1) goTo(current + 1);
+  });
+  if (btnBack) btnBack.addEventListener('click', () => {
+    if (current > 0) goTo(current - 1);
+  });
+
+  goTo(0);
+}
+
+function _validate(form, scope = form) {
+  let valid = true;
+  scope.querySelectorAll('input,select,textarea').forEach(el => {
+    _clearError(el);
+    const rules = JSON.parse(el.dataset.rules || '[]');
+    const val   = el.value.trim();
+
+    for (const rule of rules) {
+      let err = null;
+      if (rule.type === 'required' && !val)                              err = rule.message;
+      if (rule.type === 'minLength' && val && val.length < rule.value)   err = rule.message;
+      if (rule.type === 'maxLength' && val && val.length > rule.value)   err = rule.message;
+      if (rule.type === 'min' && val && parseFloat(val) < rule.value)    err = rule.message;
+      if (rule.type === 'max' && val && parseFloat(val) > rule.value)    err = rule.message;
+      if (rule.type === 'email' && val && !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(val)) err = rule.message;
+      if (rule.type === 'regex' && val && !new RegExp(rule.value).test(val))        err = rule.message;
+      if (err) { _showError(el, err); valid = false; break; }
+    }
+
+    if (el.required && !val) {
+      _showError(el, 'This field is required');
+      valid = false;
+    }
+  });
+  return valid;
+}
+
+function _showError(el, msg) {
+  el.classList.add('frm-invalid');
+  const err = document.createElement('div');
+  err.className = 'frm-error-msg';
+  err.textContent = msg;
+  el.parentNode.appendChild(err);
+}
+
+function _clearError(el) {
+  el.classList.remove('frm-invalid');
+  el.parentNode?.querySelectorAll('.frm-error-msg').forEach(e => e.remove());
+}
+
+function _collect(form) {
+  const formId  = form.getAttribute('data-formora-id') || form.closest('[data-formora-id]')?.getAttribute('data-formora-id') || '';
+  const data    = {};
+  const typed   = {};
+
+  form.querySelectorAll('input,select,textarea').forEach(el => {
+    if (!el.name) return;
+    if (el.type === 'radio' && !el.checked) return;
+    if (el.type === 'checkbox') {
+      data[el.name]  = el.checked ? 'true' : 'false';
+      typed[el.name] = el.checked;
+      return;
+    }
+    data[el.name]  = el.value;
+    const num = Number(el.value);
+    typed[el.name] = el.type === 'number' && !isNaN(num) ? num : el.value;
+  });
+
+  return new FormResult(formId, data, typed);
+}
+
+function _showSuccess(form) {
+  form.querySelectorAll('.frm-field,.frm-nav,.frm-step').forEach(el => el.style.display = 'none');
+  form.querySelector('.frm-actions')?.style && (form.querySelector('.frm-actions').style.display = 'none');
+  const suc = form.querySelector('.frm-success');
+  if (suc) suc.style.display = '';
+}
+
+// ─── FormResult ──────────────────────────────────────────────────────────── //
+
+class FormResult {
+  constructor(formId, data, typedData) {
+    this.formId    = formId;
+    this.data      = data;
+    this.typedData = typedData;
+  }
+
+  toMessage() {
+    return FORMORA_PREFIX + JSON.stringify({
+      form_id:    this.formId,
+      data:       this.data,
+      typed_data: this.typedData,
+    });
+  }
+
+  asText() {
+    return Object.entries(this.typedData)
+      .filter(([, v]) => v !== '' && v !== false)
+      .map(([k, v]) => `${k.replace(/_/g, ' ')}: ${v}`)
+      .join(', ');
+  }
+}
+
+function isFormoraMessage(msg) {
+  return typeof msg === 'string' && msg.startsWith(FORMORA_PREFIX);
+}
+
+function parseFormoraMessage(msg) {
+  if (!isFormoraMessage(msg)) return null;
+  try {
+    const payload = JSON.parse(msg.slice(FORMORA_PREFIX.length));
+    return new FormResult(payload.form_id, payload.data, payload.typed_data);
+  } catch {
+    return null;
+  }
+}
+</script>
+
+<!-- ── forms.js (inlined) ────────────────────────────────────────────────── -->
+<script>
+function buildVpnForm() {
+  return new Form('vpn_issue')
+    .title('VPN Issue')
+    .text('employee_name', 'Your Name', { required: true, rules: [Rule.required(), Rule.minLength(2)] })
+    .email('email', 'Work Email', { required: true, rules: [Rule.required(), Rule.email()] })
+    .select('os', 'Operating System', [['Windows 10/11', 'windows'], ['macOS', 'macos'], ['Linux', 'linux']], { required: true })
+    .text('vpn_client', 'VPN Client', { placeholder: 'e.g. Cisco AnyConnect, GlobalProtect' })
+    .textarea('issue', 'Describe the Issue', { required: true, rows: 3, rules: [Rule.required()] })
+    .select('urgency', 'Urgency', [['Low', 'low'], ['Medium', 'medium'], ['High', 'high'], ['Critical', 'critical']], { required: true })
+    .submitLabel('Submit')
+    .successMessage('Your VPN issue has been logged. Check your inbox for next steps.')
+    .build();
+}
+
+function buildAccountForm() {
+  return new Form('account_issue')
+    .title('Account / Login Issue')
+    .text('employee_name', 'Your Name', { required: true, rules: [Rule.required()] })
+    .email('email', 'Work Email', { required: true, rules: [Rule.required(), Rule.email()] })
+    .select('issue_type', 'Issue Type', [
+      ['Account locked', 'locked'],
+      ['Forgot password', 'forgot_password'],
+      ['MFA not working', 'mfa'],
+      ['Access denied', 'access_denied'],
+      ['Other', 'other'],
+    ], { required: true })
+    .textarea('details', 'Additional Details', { rows: 3 })
+    .select('urgency', 'Urgency', [['Low', 'low'], ['Medium', 'medium'], ['High', 'high'], ['Critical', 'critical']], { required: true })
+    .submitLabel('Submit')
+    .successMessage('Account issue logged. Our team will be in touch shortly.')
+    .build();
+}
+
+function buildHardwareForm() {
+  return new Form('hardware_issue')
+    .title('Hardware Issue')
+    .text('employee_name', 'Your Name', { required: true, rules: [Rule.required()] })
+    .email('email', 'Work Email', { required: true, rules: [Rule.required(), Rule.email()] })
+    .select('device_type', 'Device Type', [
+      ['Laptop', 'laptop'], ['Desktop', 'desktop'], ['Monitor', 'monitor'],
+      ['Keyboard / Mouse', 'peripheral'], ['Printer', 'printer'],
+      ['Headset / Webcam', 'audio_video'], ['Other', 'other'],
+    ], { required: true })
+    .text('device_model', 'Device Model / Asset Tag', { placeholder: 'e.g. Dell XPS 15, Asset #12345' })
+    .textarea('issue', 'Describe the Problem', { required: true, rows: 3, rules: [Rule.required()] })
+    .select('urgency', 'Urgency', [['Low', 'low'], ['Medium', 'medium'], ['High', 'high'], ['Critical', 'critical']], { required: true })
+    .submitLabel('Submit')
+    .successMessage('Hardware issue logged. IT will assess and follow up.')
+    .build();
+}
+
+function buildSoftwareForm() {
+  return new Form('software_issue')
+    .title('Software Issue')
+    .text('employee_name', 'Your Name', { required: true, rules: [Rule.required()] })
+    .email('email', 'Work Email', { required: true, rules: [Rule.required(), Rule.email()] })
+    .text('application', 'Application Name', { required: true, placeholder: 'e.g. Microsoft Teams, Slack', rules: [Rule.required()] })
+    .select('issue_type', 'Issue Type', [
+      ['App crashing', 'crash'], ['Cannot install', 'install'],
+      ['Licence / activation', 'licence'], ['Performance issues', 'perf'],
+      ['Error message', 'error'], ['Other', 'other'],
+    ], { required: true })
+    .text('error_code', 'Error Code (if any)', { placeholder: 'Optional' })
+    .textarea('details', 'Describe the Issue', { required: true, rows: 3, rules: [Rule.required()] })
+    .select('urgency', 'Urgency', [['Low', 'low'], ['Medium', 'medium'], ['High', 'high'], ['Critical', 'critical']], { required: true })
+    .submitLabel('Submit')
+    .successMessage("Software issue logged. We'll be in touch.")
+    .build();
+}
+
+function buildNetworkForm() {
+  return new Form('network_issue')
+    .title('Network / Connectivity Issue')
+    .text('employee_name', 'Your Name', { required: true, rules: [Rule.required()] })
+    .email('email', 'Work Email', { required: true, rules: [Rule.required(), Rule.email()] })
+    .select('connection_type', 'Connection Type', [
+      ['Wi-Fi', 'wifi'], ['Ethernet', 'ethernet'], ['VPN-only', 'vpn'], ['Both Wi-Fi and Ethernet', 'both'],
+    ], { required: true })
+    .select('issue_type', 'Issue Type', [
+      ['No internet', 'no_internet'], ['Slow connection', 'slow'],
+      ['Cannot reach internal systems', 'internal'], ['DNS issues', 'dns'],
+      ['Packet loss / drops', 'drops'], ['Other', 'other'],
+    ], { required: true })
+    .textarea('details', 'Additional Details', { rows: 3 })
+    .select('urgency', 'Urgency', [['Low', 'low'], ['Medium', 'medium'], ['High', 'high'], ['Critical', 'critical']], { required: true })
+    .submitLabel('Submit')
+    .successMessage('Network issue logged. Our team will investigate.')
+    .build();
+}
+
+function buildEmailForm() {
+  return new Form('email_issue')
+    .title('Email / M365 Issue')
+    .text('employee_name', 'Your Name', { required: true, rules: [Rule.required()] })
+    .email('email', 'Work Email', { required: true, rules: [Rule.required(), Rule.email()] })
+    .select('issue_type', 'Issue Type', [
+      ['Outlook not working', 'outlook'], ['Cannot send/receive email', 'send_recv'],
+      ['Calendar issues', 'calendar'], ['Teams issue', 'teams'],
+      ['Shared mailbox', 'shared_mailbox'], ['Other', 'other'],
+    ], { required: true })
+    .textarea('details', 'Describe the Issue', { required: true, rows: 3, rules: [Rule.required()] })
+    .select('urgency', 'Urgency', [['Low', 'low'], ['Medium', 'medium'], ['High', 'high'], ['Critical', 'critical']], { required: true })
+    .submitLabel('Submit')
+    .successMessage("Email issue logged. We'll get this sorted.")
+    .build();
+}
+
+function buildAccessForm() {
+  return new Form('access_request')
+    .title('Access Request')
+    .text('employee_name', 'Your Name', { required: true, rules: [Rule.required()] })
+    .email('email', 'Work Email', { required: true, rules: [Rule.required(), Rule.email()] })
+    .email('manager_email', "Manager's Email", { required: true, rules: [Rule.required(), Rule.email()] })
+    .text('system_resource', 'System / Resource Requested', { required: true, placeholder: 'e.g. Salesforce, HR Drive, Azure portal', rules: [Rule.required()] })
+    .textarea('business_justification', 'Business Justification', { required: true, rows: 3, rules: [Rule.required()] })
+    .select('access_level', 'Access Level', [['Read Only', 'read'], ['Read/Write', 'readwrite'], ['Admin', 'admin']], { required: true })
+    .submitLabel('Submit Request')
+    .successMessage('Access request submitted. Your manager will receive an approval email.')
+    .build();
+}
+
+function buildProcurementForm() {
+  return new Form('procurement_request')
+    .title('IT Procurement Request')
+    .text('employee_name', 'Your Name', { required: true, rules: [Rule.required()] })
+    .email('email', 'Work Email', { required: true, rules: [Rule.required(), Rule.email()] })
+    .email('manager_email', 'Approving Manager Email', { required: true, rules: [Rule.required(), Rule.email()] })
+    .text('item_description', 'Item / Equipment Required', { required: true, placeholder: 'e.g. MacBook Pro 14", USB-C hub', rules: [Rule.required()] })
+    .number('quantity', 'Quantity', { required: true, min: 1, rules: [Rule.required(), Rule.min(1)] })
+    .textarea('business_justification', 'Business Justification', { required: true, rows: 3, rules: [Rule.required()] })
+    .submitLabel('Submit Request')
+    .successMessage('Purchase request submitted. Approval email sent to your manager.')
+    .build();
+}
+
+function buildOnboardingForm() {
+  return new Form('onboarding_setup')
+    .title('New Employee Onboarding')
+    .step('Personal Details')
+    .text('employee_name', 'Full Name', { required: true, rules: [Rule.required()] })
+    .email('email', 'Work Email', { required: true, rules: [Rule.required(), Rule.email()] })
+    .text('department', 'Department', { required: true, rules: [Rule.required()] })
+    .text('job_title', 'Job Title', { required: true, rules: [Rule.required()] })
+    .step('Setup Preferences')
+    .select('device_preference', 'Device Preference', [
+      ['MacBook Pro', 'macbook_pro'], ['MacBook Air', 'macbook_air'],
+      ['Windows Laptop', 'windows_laptop'], ['Desktop', 'desktop'],
+    ], { required: true })
+    .select('start_date_readiness', 'Start Date', [
+      ['Within 1 week', '1week'], ['1–2 weeks', '2weeks'],
+      ['2–4 weeks', '4weeks'], ['More than a month', 'month_plus'],
+    ])
+    .textarea('additional_requirements', 'Any Additional Requirements?', { rows: 3 })
+    .submitLabel('Submit Onboarding Request')
+    .successMessage('Onboarding request received! IT will prepare your setup before day one.')
+    .build();
+}
+
+function buildGenericForm() {
+  return new Form('generic_incident')
+    .title('IT Support Request')
+    .text('employee_name', 'Your Name', { required: true, rules: [Rule.required()] })
+    .email('email', 'Work Email', { required: true, rules: [Rule.required(), Rule.email()] })
+    .textarea('issue', 'Describe Your Issue', { required: true, rows: 4, rules: [Rule.required(), Rule.minLength(10)] })
+    .select('urgency', 'Urgency', [['Low', 'low'], ['Medium', 'medium'], ['High', 'high'], ['Critical', 'critical']], { required: true })
+    .submitLabel('Submit')
+    .successMessage('Issue logged. Our team will be in touch shortly.')
+    .build();
+}
+
+const FORM_MAP = {
+  vpn:               buildVpnForm,
+  account:           buildAccountForm,
+  hardware:          buildHardwareForm,
+  software:          buildSoftwareForm,
+  network:           buildNetworkForm,
+  email:             buildEmailForm,
+  access:            buildAccessForm,
+  procurement:       buildProcurementForm,
+  onboarding:        buildOnboardingForm,
+  generic_incident:  buildGenericForm,
+};
+
+function dispatchForm(intent) {
+  const builder = FORM_MAP[intent];
+  return builder ? builder() : null;
+}
+</script>
+
+<!-- ── intent.js (inlined) ───────────────────────────────────────────────── -->
+<script>
+const GREETING_RE = /^\s*(hi+|hey+|hello+|howdy|yo+|sup|good (morning|afternoon|evening)|thanks?|thank you|cheers|bye|goodbye|ok|okay|cool|great|sure|got it|noted)\s*[!?.]*\s*$/i;
+
+const INTENT_KEYWORDS = {
+  vpn:              ['vpn', 'remote', 'tunnel', 'connect remotely', 'cisco anyconnect', 'wireguard', 'openvpn', 'remote access'],
+  account:          ['password', 'locked', 'login', 'reset', 'access denied', 'sign in', 'forgot', 'credentials', 'mfa', '2fa', 'account'],
+  hardware:         ['laptop', 'keyboard', 'mouse', 'monitor', 'printer', 'screen', 'device', 'battery', 'charger', 'headset', 'webcam'],
+  software:         ['install', 'app', 'software', 'crash', 'update', 'license', 'application', 'error code', 'not opening', 'uninstall'],
+  network:          ['internet', 'wifi', 'slow', 'network', 'connection', 'no internet', 'packet loss', 'latency', 'dns', 'ethernet'],
+  email:            ['email', 'outlook', 'calendar', 'teams', 'mailbox', 'meeting', 'distribution list', 'signature', 'spam'],
+  access:           ['permission', 'folder', 'drive', 'share', 'access', 'shared drive', 'read only', 'write access', 'file server'],
+  procurement:      ['order', 'request', 'new laptop', 'equipment', 'purchase', 'budget', 'quote', 'hardware request'],
+  onboarding:       ['new joiner', 'joined', 'first day', 'setup', 'onboard', 'new employee', 'getting started'],
+};
+
+function detectIntent(message) {
+  const stripped = message.trim();
+  if (GREETING_RE.test(stripped)) return 'greeting';
+
+  const lower = stripped.toLowerCase();
+  const scores = {};
+
+  for (const [intent, keywords] of Object.entries(INTENT_KEYWORDS)) {
+    scores[intent] = keywords.filter(kw => lower.includes(kw)).length;
+  }
+
+  const best      = Object.keys(scores).reduce((a, b) => scores[a] >= scores[b] ? a : b);
+  const bestScore = scores[best];
+
+  if (bestScore === 0) {
+    if (stripped.split(/\s+/).length <= 4) return 'greeting';
+    return 'generic_incident';
+  }
+
+  return best;
+}
+
+const INTRO = {
+  greeting:         "Hey! I'm DeskFlow, your IT support assistant. What can I help you with today?",
+  vpn:              "VPN troubles — not fun! Let me grab a few details so I can get you sorted.",
+  account:          "Account issues are stressful, but we'll get you sorted quickly.",
+  hardware:         "Hardware gremlins! Let me pull up a quick form to get the specifics.",
+  software:         "Software being awkward? Let me ask you a few things so I can give you the right fix.",
+  network:          "Connection problems are the worst. Let me get some details to help diagnose this.",
+  email:            "Email issues — always at the worst time! Let me get some details.",
+  access:           "Access requests sorted quickly — fill in the details below.",
+  procurement:      "Happy to help with your purchase request.",
+  onboarding:       "Welcome! Let's get everything set up properly.",
+  generic_incident: "I'm here to help! Let me take the details so I can find the best solution.",
+};
+
+function getIntroMessage(intent) {
+  return INTRO[intent] || INTRO.generic_incident;
+}
+
+const RUNBOOKS = {
+  vpn_issue: `VPN Runbook:
+- Likely causes: credential expiry, MFA drift, firewall blocking UDP 1194/TCP 443, client misconfiguration.
+- Steps: verify internet; restart VPN client from tray; check credentials; re-sync MFA app; reboot; flush DNS (ipconfig /flushdns on Windows); disable conflicting firewall/AV; reinstall VPN client.
+- Escalate if: unresolved after reinstall, multiple users affected, or Critical urgency.`,
+
+  account_issue: `Account Runbook:
+- Likely causes: too many failed logins (auto-lockout), expired password, MFA device time drift.
+- Steps: wait 15 min for auto-unlock; try self-service password reset; re-sync MFA app; contact IT to manually unlock; request Temporary Access Pass (TAP) for MFA bypass.
+- Escalate: High/Critical urgency or if account is admin-level.`,
+
+  hardware_issue: `Hardware Runbook:
+- Likely causes: driver fault, physical damage, hardware component failure.
+- Steps: power cycle device; test peripheral on another port/machine; check Device Manager for errors; update driver; run built-in diagnostics (Dell SupportAssist, Apple Diagnostics).
+- Escalate: physical damage or persistent failure — request hardware assessment/replacement.`,
+
+  software_issue: `Software Runbook:
+- Likely causes: corrupt install, missing dependencies, licence expiry, insufficient permissions.
+- Steps: close fully (check tray); run as Administrator; check for updates; uninstall, delete AppData, reinstall; verify disk space (>10 GB free); check licence validity.
+- Escalate: business-critical application, High/Critical urgency.`,
+
+  network_issue: `Network Runbook:
+- Likely causes: DHCP lease failure, DNS misconfiguration, physical link issue.
+- Steps: check other devices; restart network adapter; ipconfig /release + /renew + /flushdns; try Ethernet if on Wi-Fi; nslookup to test DNS; reboot router/switch (home).
+- Escalate: office-wide outage, infrastructure suspected.`,
+
+  email_issue: `Email/M365 Runbook:
+- Likely causes: Outlook profile corruption, OST file corruption, M365 service outage.
+- Steps: check M365 Service Health for outages; test Outlook Web Access (OWA); restart Outlook (close from tray); run in Safe Mode (outlook.exe /safe); create new Outlook profile; clear Teams cache + reinstall.
+- Escalate: if OWA also failing, likely tenant-wide issue — contact Microsoft.`,
+
+  access_request: `Access Request Runbook:
+- Process: manager approval required within 48 h; IT provisions within 1 business day after approval.
+- Provisioning: role-based access following least-privilege; audit log entry created.
+- Escalation: urgent access — provide business justification; emergency access via IT helpdesk.`,
+
+  procurement_request: `Procurement Runbook:
+- Process: manager approval → PO raised → procurement team orders → delivery 5–10 business days (in-stock).
+- Status updates emailed at: Approved → PO Raised → Dispatched → Delivered.
+- Escalation: urgent procurement requires budget-holder sign-off and IT director approval.`,
+
+  onboarding_setup: `Onboarding Runbook:
+- Timeline: M365 account created 1–2 days before start; device imaged and configured before day one.
+- Day one: IT walkthrough — login, MFA setup, VPN, key applications.
+- Access provisioned based on manager approvals (role-based).
+- IT checks in on day 3 for outstanding issues.`,
+
+  generic_incident: `General IT Runbook:
+- Start: restart affected app; if persisting, reboot device; note error messages/codes.
+- Check IT status page for known incidents; check if other users affected.
+- Collect: device model, OS, application version, steps to reproduce, error screenshots.
+- Escalate: High/Critical urgency or if multiple users impacted.`,
+};
+
+function getRunbookContext(formId) {
+  return RUNBOOKS[formId] || RUNBOOKS.generic_incident;
+}
+
+function buildChatSystemPrompt() {
+  return (
+    'You are DeskFlow, a friendly IT support assistant. ' +
+    'Reply conversationally in 1–3 short sentences. ' +
+    'Do NOT provide technical steps yet — just respond naturally to what the user said.'
+  );
+}
+
+function buildResolutionSystemPrompt(formId, requestNumber) {
+  const context    = getRunbookContext(formId);
+  const ticketLine = requestNumber
+    ? `The user's request has been logged as **${requestNumber}**. Open your reply by mentioning this number warmly. `
+    : '';
+
+  return (
+    `You are DeskFlow, a friendly IT support assistant. ${ticketLine}Be concise, warm, and practical.\n\n` +
+    `Reply with: 1) Likely cause  2) Numbered resolution steps  3) Escalation note if urgency is High or Critical.\n\n` +
+    `Runbook context:\n${context}`
+  );
+}
+
+function formResultToPrompt(formResult) {
+  const title = (formResult.formId || 'IT Support Request').replace(/_/g, ' ').replace(/\b\w/g, c => c.toUpperCase());
+  const lines = [`IT Support Request: ${title}`];
+  for (const [k, v] of Object.entries(formResult.typedData || {})) {
+    if (v !== '' && v !== false && v != null) {
+      lines.push(`- ${k.replace(/_/g, ' ').replace(/\b\w/g, c => c.toUpperCase())}: ${v}`);
+    }
+  }
+  return lines.join('\n');
+}
+
+const TEMPLATES = {
+  vpn_issue: `## VPN Issue — Suggested Resolution
+
+**Likely cause:** VPN client configuration issue, credential expiry, or network port blocking.
+
+**Steps to resolve:**
+1. Verify your internet connection is working.
+2. Restart the VPN client completely (close from system tray).
+3. Ensure your username and password are correct and not expired.
+4. Re-sync your MFA authenticator app — check device clock is accurate.
+5. Reboot your device and try again.
+6. On Windows: run \`ipconfig /flushdns\` in an elevated command prompt.
+7. Check that your firewall is not blocking the VPN port (UDP 1194 / TCP 443).
+8. Reinstall the VPN client from the IT software portal.`,
+
+  account_issue: `## Account Issue — Suggested Resolution
+
+**Likely cause:** Account lockout, expired password, or MFA misconfiguration.
+
+**Steps to resolve:**
+1. Wait 15 minutes — most accounts auto-unlock after a lockout period.
+2. Verify Caps Lock is off and you are using the correct username format.
+3. Attempt a self-service password reset at the IT portal.
+4. Re-sync your MFA authenticator app.
+5. Contact IT to manually unlock if auto-unlock has not worked.
+6. If MFA is the issue, IT can provide a Temporary Access Pass (TAP).`,
+
+  hardware_issue: `## Hardware Issue — Suggested Resolution
+
+**Likely cause:** Driver issue, physical damage, or hardware component failure.
+
+**Steps to resolve:**
+1. Power cycle the device completely (hold power for 10 seconds, then restart).
+2. For peripherals: try a different USB port and test on another machine.
+3. Check Device Manager for driver errors (yellow exclamation marks).
+4. Update the device driver from the manufacturer's website.
+5. Run built-in diagnostics (Dell SupportAssist, HP Support Assistant, or Apple Diagnostics).
+6. If the issue persists, contact IT for a hardware assessment.`,
+
+  software_issue: `## Software Issue — Suggested Resolution
+
+**Likely cause:** Corrupt installation, missing dependencies, licence expiry, or permissions issue.
+
+**Steps to resolve:**
+1. Close the application completely (check the system tray) and reopen.
+2. Run the application as Administrator.
+3. Check for available updates and install them.
+4. Reinstall: uninstall, delete leftover app data, then reinstall.
+5. Verify you have enough disk space (minimum 10 GB free).
+6. Check that your software licence is still valid.`,
+
+  network_issue: `## Network Issue — Suggested Resolution
+
+**Likely cause:** DHCP lease failure, DNS misconfiguration, or physical connectivity issue.
+
+**Steps to resolve:**
+1. Check if other devices on the same network are affected.
+2. Restart your network adapter.
+3. On Windows: run \`ipconfig /release\`, then \`/renew\`, then \`/flushdns\`.
+4. Try connecting via Ethernet if you are on Wi-Fi.
+5. Test DNS: run \`nslookup google.com\` in Command Prompt.
+6. Reboot your router/switch if you are at home.`,
+
+  email_issue: `## Email / Communications Issue — Suggested Resolution
+
+**Likely cause:** Outlook profile corruption, OST file corruption, or M365 service issue.
+
+**Steps to resolve:**
+1. Check the Microsoft 365 service health page for known outages.
+2. Test Outlook Web Access (OWA) — if OWA works, the issue is with the desktop client.
+3. Restart Outlook from the system tray.
+4. Run Outlook in Safe Mode: Win+R → \`outlook.exe /safe\`.
+5. Create a new Outlook profile: Control Panel → Mail → Show Profiles → Add.
+6. For Teams issues: clear the Teams cache and reinstall.`,
+
+  access_request: `## Access Request — Next Steps
+
+**Your access request has been received.**
+
+1. An approval email will be sent to your manager.
+2. Your manager has **48 hours** to approve or decline.
+3. Once approved, IT will provision access within **1 business day**.
+4. You will receive a confirmation email when access has been granted.`,
+
+  procurement_request: `## Procurement Request — Next Steps
+
+**Your purchase request has been received.**
+
+1. An approval request will be sent to your approving manager.
+2. Upon approval, IT Procurement will raise a Purchase Order (PO).
+3. Standard delivery: **5–10 business days** for in-stock items.
+4. Status updates emailed at each stage: Approved → PO Raised → Dispatched → Delivered.`,
+
+  onboarding_setup: `## Onboarding Setup — What to Expect
+
+**Your onboarding request has been received.**
+
+1. **Account creation**: Your M365 account and email will be created 1–2 days before start date.
+2. **Device provisioning**: Your laptop/desktop will be imaged and configured before day one.
+3. **Day-one**: IT will walk you through login, MFA setup, and VPN connection.
+4. **Access**: All requested system access provisioned based on your manager's approvals.
+5. **Follow-up**: IT will check in on day 3 to address any outstanding issues.`,
+
+  generic_incident: `## IT Incident — Suggested Resolution
+
+**Likely cause:** Based on your description, this may be a software, network, or configuration issue.
+
+**Steps to resolve:**
+1. Restart the affected application or service.
+2. Reboot your device if the issue persists.
+3. Check if other users are affected.
+4. Note any error messages or codes.
+5. Check the IT status page for known incidents.`,
+};
+
+const URGENCY_NOTE = {
+  high:     '\n\n> **Escalation**: Marked **High** urgency. If unresolved within 1 hour, contact the IT helpdesk directly.',
+  critical: '\n\n> **Escalation**: Marked **CRITICAL**. Contact the IT helpdesk **immediately** or call the emergency support line.',
+};
+
+function generateTemplateResponse(formResult, requestNumber = '') {
+  const formId   = formResult.formId || 'generic_incident';
+  const urgency  = String((formResult.typedData || {}).urgency || '').toLowerCase();
+  let response   = TEMPLATES[formId] || TEMPLATES.generic_incident;
+
+  if (URGENCY_NOTE[urgency]) response += URGENCY_NOTE[urgency];
+  if (requestNumber) {
+    response = `I've logged your request as **${requestNumber}**. Here's what I recommend:\n\n` + response;
+  }
+  return response;
+}
+</script>
+
+<!-- ── Main app logic ─────────────────────────────────────────────────────── -->
+<script>
+// ── DOM refs ──────────────────────────────────────────────────────────────── //
+const messagesEl   = document.getElementById('messages');
+const emptyState   = document.getElementById('empty-state');
+const msgInput     = document.getElementById('msg-input');
+const sendBtn      = document.getElementById('send-btn');
+const statusEl     = document.getElementById('model-status');
+const progressWrap = document.getElementById('model-progress-wrap');
+const progressBar  = document.getElementById('model-progress-bar');
+const statusWrap   = document.getElementById('model-status-wrap');
+
+// ── Ticket counter ────────────────────────────────────────────────────────── //
+let _ticketSeq = Math.floor(Math.random() * 9000) + 1000;
+function nextTicket() { return `INC-${++_ticketSeq}`; }
+
+// ── LLM reference (set by WebGPU module) ─────────────────────────────────── //
+window._llm         = { status: 'idle', generator: null };
+window._llmGenerate = null;
+
+// ── Helpers ───────────────────────────────────────────────────────────────── //
+function esc(s) { return String(s).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;'); }
+
+function scrollBottom() {
+  requestAnimationFrame(() => messagesEl.scrollTop = messagesEl.scrollHeight);
+}
+
+function hideEmptyState() {
+  emptyState.style.display = 'none';
+}
+
+function setLoading(on) {
+  sendBtn.disabled  = on;
+  msgInput.disabled = on;
+  sendBtn.style.opacity = on ? '0.5' : '1';
+}
+
+// ── Bot row factory ───────────────────────────────────────────────────────── //
+function addBotRow(innerHTML) {
+  const wrap = document.createElement('div');
+  wrap.className = 'flex justify-start';
+
+  const row = document.createElement('div');
+  row.className = 'flex items-start gap-3 max-w-3xl';
+
+  const avatar = document.createElement('div');
+  avatar.className = 'w-7 h-7 rounded-lg flex-shrink-0 flex items-center justify-center mt-0.5';
+  avatar.style.cssText = 'background:linear-gradient(135deg,#1f6feb,#388bfd)';
+  avatar.innerHTML = `<svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="white" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M9 17H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2v3"/><path d="M13 21l2-2 4 4 2-2-4-4 2-2-6-1z"/></svg>`;
+
+  const bubble = document.createElement('div');
+  bubble.className = 'rounded-2xl rounded-tl-sm px-4 py-3 text-sm leading-relaxed';
+  bubble.style.cssText = 'background:#1c2128;border:1px solid #30363d;color:#adbac7;max-width:44rem;flex:1';
+  bubble.innerHTML = innerHTML;
+
+  row.appendChild(avatar);
+  row.appendChild(bubble);
+  wrap.appendChild(row);
+  messagesEl.appendChild(wrap);
+  scrollBottom();
+  return bubble;
+}
+
+function addUserBubble(text) {
+  const wrap = document.createElement('div');
+  wrap.className = 'flex justify-end';
+  const bubble = document.createElement('div');
+  bubble.className = 'rounded-2xl rounded-tr-sm px-4 py-3 text-sm leading-relaxed';
+  bubble.style.cssText = 'background:linear-gradient(135deg,#1f6feb,#388bfd);color:white;max-width:32rem';
+  bubble.textContent = text;
+  wrap.appendChild(bubble);
+  messagesEl.appendChild(wrap);
+  scrollBottom();
+}
+
+function addTextBubble(text) {
+  return addBotRow(`<span style="color:#adbac7">${esc(text)}</span>`);
+}
+
+function addMarkdownBubble(md) {
+  return addBotRow(`<div class="md-body">${marked.parse(md)}</div>`);
+}
+
+function addTyping() {
+  return addBotRow('<div class="flex items-center gap-1.5 py-1"><span class="typing-dot"></span><span class="typing-dot"></span><span class="typing-dot"></span></div>');
+}
+
+// ── Form injection ────────────────────────────────────────────────────────── //
+function injectForm(formHtml, intent) {
+  const bubble = addBotRow('');
+  bubble.style.padding = '12px';
+  bubble.innerHTML = formHtml;
+
+  const formEl = bubble.querySelector('form[data-formora-id]');
+  const formId = formEl?.getAttribute('data-formora-id');
+
+  attachForms(bubble);
+
+  function onFormoraSubmit(e) {
+    const { parsed } = e.detail;
+    if (parsed.formId !== formId) return;
+
+    window.removeEventListener('formora:submit', onFormoraSubmit);
+
+    const requestNumber = nextTicket();
+
+    const pill = document.createElement('div');
+    pill.className = 'inc-pill';
+    pill.textContent = `✓ ${requestNumber}`;
+    bubble.insertBefore(pill, bubble.firstChild);
+
+    handleFormSubmit(parsed, requestNumber, intent);
+  }
+
+  window.addEventListener('formora:submit', onFormoraSubmit);
+  scrollBottom();
+}
+
+// ── Form submit → LLM resolution ─────────────────────────────────────────── //
+function handleFormSubmit(formResult, requestNumber, intent) {
+  const systemPrompt     = buildResolutionSystemPrompt(formResult.formId, requestNumber);
+  const userPrompt       = formResultToPrompt(formResult);
+  const templateResponse = generateTemplateResponse(formResult, requestNumber);
+
+  const typing = addTyping();
+
+  function showTemplate() {
+    typing.closest('.flex.justify-start')?.remove();
+    addMarkdownBubble(templateResponse);
+  }
+
+  const llmGenerate = window._llmGenerate;
+  if (typeof llmGenerate !== 'function' || window._llm?.status !== 'ready') {
+    showTemplate();
+    return;
+  }
+
+  typing.closest('.flex.justify-start')?.remove();
+  const chatBubble = addBotRow('<div class="md-body streaming-cursor"></div>');
+  const innerEl    = chatBubble.querySelector('.md-body');
+
+  llmGenerate(
+    systemPrompt, userPrompt, templateResponse,
+    (acc)   => { innerEl.className = 'md-body streaming-cursor'; innerEl.innerHTML = marked.parse(acc); scrollBottom(); },
+    (final) => { innerEl.className = 'md-body'; innerEl.innerHTML = marked.parse(final || templateResponse); scrollBottom(); },
+    (_t)    => { chatBubble.remove(); addMarkdownBubble(templateResponse); },
+  );
+}
+
+// ── Send message ──────────────────────────────────────────────────────────── //
+async function sendMessage() {
+  const text = msgInput.value.trim();
+  if (!text) return;
+
+  hideEmptyState();
+  addUserBubble(text);
+  msgInput.value = '';
+  msgInput.style.height = 'auto';
+  setLoading(true);
+
+  const typingBubble = addTyping();
+  const intent       = detectIntent(text);
+  const templateChat = getIntroMessage(intent);
+  const formHtml     = dispatchForm(intent);
+
+  await new Promise(r => setTimeout(r, 180));
+  typingBubble.closest('.flex.justify-start')?.remove();
+
+  const chatBubble = addTextBubble(templateChat);
+
+  if (formHtml) {
+    injectForm(formHtml, intent);
+  } else {
+    msgInput.focus();
+  }
+  setLoading(false);
+
+  const llmGenerate = window._llmGenerate;
+  if (typeof llmGenerate !== 'function' || window._llm?.status !== 'ready') return;
+
+  chatBubble.innerHTML = '<div class="md-body streaming-cursor"></div>';
+  const innerEl = chatBubble.querySelector('.md-body');
+
+  llmGenerate(
+    buildChatSystemPrompt(), text, templateChat,
+    (acc)   => { innerEl.className = 'md-body streaming-cursor'; innerEl.innerHTML = marked.parse(acc); scrollBottom(); },
+    (final) => { innerEl.className = 'md-body'; innerEl.innerHTML = marked.parse(final || templateChat); scrollBottom(); },
+    (_t)    => { chatBubble.textContent = templateChat; },
+  );
+}
+
+// ── Event listeners ───────────────────────────────────────────────────────── //
+msgInput.addEventListener('keydown', e => {
+  if (e.key === 'Enter' && !e.shiftKey) { e.preventDefault(); sendMessage(); }
+});
+sendBtn.addEventListener('click', sendMessage);
+
+document.querySelectorAll('.chip').forEach(chip => {
+  chip.addEventListener('click', () => {
+    msgInput.value = chip.dataset.msg;
+    sendMessage();
+  });
+});
+</script>
+
+<!-- ── WebGPU / LLM module ───────────────────────────────────────────────── -->
+<script type="module">
+import { pipeline, TextStreamer, env }
+  from 'https://cdn.jsdelivr.net/npm/@huggingface/transformers@3.5.0/dist/transformers.min.js';
+
+env.allowLocalModels = false;
+if (env.backends?.onnx?.wasm) {
+  env.backends.onnx.wasm.numThreads = 1;
+  env.backends.onnx.wasm.wasmPaths = 'https://cdn.jsdelivr.net/npm/onnxruntime-web/dist/';
+}
+
+const MODEL_ID    = 'HuggingFaceTB/SmolLM2-360M-Instruct';
+const statusEl    = document.getElementById('model-status');
+const progressWrap= document.getElementById('model-progress-wrap');
+const progressBar = document.getElementById('model-progress-bar');
+const statusWrap  = document.getElementById('model-status-wrap');
+
+function setStatusUI(text, color, pct) {
+  statusEl.textContent = text;
+  statusEl.style.color = color;
+  if (pct != null) {
+    progressWrap.classList.remove('hidden');
+    progressBar.style.width = Math.round(pct) + '%';
+  } else {
+    progressWrap.classList.add('hidden');
+  }
+}
+
+if (!navigator.gpu) {
+  window._llm.status = 'unavailable';
+  setStatusUI('⚠️ Templates only (no WebGPU)', '#d29922', null);
+  setTimeout(() => statusWrap.classList.add('hidden'), 4000);
+} else {
+  setStatusUI('⏳ Loading AI…', '#d29922', 0);
+  progressWrap.classList.remove('hidden');
+
+  (async () => {
+    window._llm.status = 'loading';
+    try {
+      window._llm.generator = await pipeline('text-generation', MODEL_ID, {
+        dtype: 'q4',
+        device: 'webgpu',
+        progress_callback: (p) => {
+          if (p.status !== 'progress') return;
+          setStatusUI(`⏳ Loading AI… ${Math.round(p.progress ?? 0)}%`, '#d29922', p.progress ?? 0);
+        },
+      });
+      window._llm.status = 'ready';
+      setStatusUI('✅ AI model ready', '#3fb950', null);
+      setTimeout(() => statusWrap.classList.add('hidden'), 3000);
+    } catch (err) {
+      console.error('[DeskFlow] Model load failed:', err);
+      window._llm.status = 'error';
+      setStatusUI('⚠️ Templates only (AI unavailable)', '#d29922', null);
+      setTimeout(() => statusWrap.classList.add('hidden'), 5000);
+    }
+  })();
+
+  window._llmGenerate = async function(systemPrompt, userPrompt, templateFallback, onToken, onDone, onFallback) {
+    if (!window._llm.generator) { onFallback(templateFallback); return; }
+    try {
+      const messages = [
+        { role: 'system', content: systemPrompt },
+        { role: 'user',   content: userPrompt   },
+      ];
+      let accumulated = '';
+      const streamer = new TextStreamer(window._llm.generator.tokenizer, {
+        skip_prompt: true,
+        callback_function: (token) => {
+          accumulated += token;
+          onToken(accumulated);
+        },
+      });
+      const result = await window._llm.generator(messages, {
+        max_new_tokens: 512,
+        temperature: 0.7,
+        do_sample: true,
+        streamer,
+      });
+      const finalText = result?.[0]?.generated_text?.at?.(-1)?.content || accumulated;
+      onDone(finalText || accumulated);
+    } catch (err) {
+      console.error('[DeskFlow] Generation failed:', err);
+      onFallback(templateFallback);
+    }
+  };
+}
+</script>
+
+</body>
+</html>
