@@ -1375,6 +1375,7 @@ function injectForm(formHtml, intent) {
 
   window.addEventListener('formora:submit', onFormoraSubmit);
   scrollBottom();
+  return bubble;
 }
 
 // ── Form submit → LLM resolution ─────────────────────────────────────────── //
@@ -1429,12 +1430,18 @@ async function sendMessage() {
 
   const chatBubble = addTextBubble(templateChat);
 
-  if (formHtml) {
-    injectForm(formHtml, intent);
+  const injectedBubble = formHtml ? injectForm(formHtml, intent) : null;
+  setLoading(false);
+
+  // Focus: first visible field in the form, or back to chat input
+  if (injectedBubble) {
+    const firstField = injectedBubble.querySelector(
+      'input:not([type="hidden"]):not([disabled]), select:not([disabled]), textarea:not([disabled])'
+    );
+    firstField?.focus();
   } else {
     msgInput.focus();
   }
-  setLoading(false);
 
   const llmGenerate = window._llmGenerate;
   if (typeof llmGenerate !== 'function' || window._llm?.status !== 'ready') return;
