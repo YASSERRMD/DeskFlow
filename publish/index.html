@@ -1553,11 +1553,14 @@ function bindGenerate() {
         skip_prompt: true,
         callback_function: (token) => { accumulated += token; onToken(accumulated); },
       });
+      // LFM2.5 requires num_logits_to_keep=1 as a mandatory ONNX input
+      const isLFM = (window._llm.modelId || '').includes('LFM');
       const result = await window._llm.generator(messages, {
         max_new_tokens: 512,
         temperature: 0.7,
         do_sample: true,
         streamer,
+        ...(isLFM ? { num_logits_to_keep: 1 } : {}),
       });
       const finalText = result?.[0]?.generated_text?.at?.(-1)?.content || accumulated;
       onDone(finalText || accumulated);
@@ -1590,7 +1593,8 @@ async function loadModel(modelId, label, onComplete) {
         setStatusUI(`⏳ ${label} ${Math.round(p.progress ?? 0)}%`, '#d29922', p.progress ?? 0);
       },
     });
-    window._llm.status = 'ready';
+    window._llm.status  = 'ready';
+    window._llm.modelId = modelId;
     bindGenerate();
     setStatusUI(`✅ ${label} ready`, '#3fb950', null);
     setTimeout(() => statusWrap.classList.add('hidden'), 3000);
