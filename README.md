@@ -1,16 +1,15 @@
 # DeskFlow
 
-AI-powered IT Helpdesk assistant built with Chainlit, a local ONNX LLM (LFM2.5-350M), and a form-driven intake system using [formora](https://github.com/YASSERRMD/formora).
+AI-powered IT Helpdesk assistant with two implementations:
 
-## Overview
+- **`public/`** — FastAPI backend + browser WebGPU inference (Python-powered)
+- **`deskflow-web/`** — Fully standalone frontend (no backend, everything runs in the browser)
 
-DeskFlow uses natural language understanding to:
-1. Detect the intent of an IT support request (10 categories)
-2. Render a structured Tailwind-styled intake form tailored to that intent
-3. Retrieve relevant runbook context via TF-IDF RAG over the knowledge base
-4. Generate a step-by-step resolution using a local LFM2.5-350M ONNX model (or a rule-based template fallback)
+Both use [formora](https://github.com/YASSERRMD/formora) for structured intake forms and [SmolLM2-360M](https://huggingface.co/HuggingFaceTB/SmolLM2-360M-Instruct) via WebGPU for local LLM inference.
 
-## Architecture
+---
+
+## How It Works
 
 ```
   User types a message
@@ -18,162 +17,188 @@ DeskFlow uses natural language understanding to:
          ▼
 ┌─────────────────────┐
 │  Intent Classifier  │  keyword scoring over 10 intent categories
-│  (intent/classifier)│
 └──────────┬──────────┘
            │ intent label
            ▼
 ┌─────────────────────┐
-│  Form Dispatcher    │  maps intent → formora HTML form
-│  (forms/dispatcher) │
+│  Chat Response      │  LLM replies conversationally first
+│  (WebGPU / template)│
 └──────────┬──────────┘
-           │ HTML form rendered in Chainlit
+           │
+           ▼
+┌─────────────────────┐
+│  Form Dispatcher    │  maps intent → formora HTML form
+└──────────┬──────────┘
+           │ HTML form injected into chat
            ▼
       User fills form
            │
-           ▼  formora submit (__formora__JSON)
-┌─────────────────────┐
-│  formora parse()    │  extracts typed_data from submission
-└──────────┬──────────┘
-           │ FormResult
            ▼
 ┌─────────────────────┐
-│  RAG Retriever      │  TF-IDF search over knowledge/runbooks/
-│  (rag/retriever)    │  returns top-5 relevant runbook chunks
+│  RAG Context        │  runbook knowledge (TF-IDF server-side
+│                     │  or inline JS client-side)
 └──────────┬──────────┘
-           │ context string
+           │ INC-XXXX ticket + context
            ▼
 ┌─────────────────────┐
-│  LLM Responder      │  LFM2.5-350M-ONNX via optimum/onnxruntime
-│  (llm/responder)    │  or rule-based template fallback
+│  LLM Resolution     │  SmolLM2-360M via WebGPU in the browser
+│  (WebGPU / template)│  or rule-based template fallback
 └──────────┬──────────┘
            │ markdown response
            ▼
-    Chainlit chat message
+      Chat bubble rendered
 ```
 
-## Project Structure
+---
+
+## Option 1 — FastAPI Backend (`public/`)
+
+Python FastAPI backend handles intent detection, RAG retrieval, and prompt building. The browser runs LLM inference via WebGPU.
+
+### Project Structure
 
 ```
-deskflow/
-├── main.py                  # Chainlit entry point
-├── demo.py                  # Terminal demo (no Chainlit required)
+├── main.py                    # FastAPI entry point + COOP/COEP middleware
 ├── requirements.txt
 ├── .env.example
-├── intent/
-│   └── classifier.py        # Keyword scoring for 10 IT intents
-├── forms/
-│   ├── dispatcher.py        # FORM_MAP: intent → build function
-│   ├── vpn.py               # VPN issue form
-│   ├── account.py           # Account/MFA issue form
-│   ├── hardware.py          # Hardware fault form
-│   ├── software.py          # Software issue form
-│   ├── network.py           # Network issue form
-│   ├── email_comms.py       # Email/Teams issue form
-│   ├── access.py            # Access request form (multi-step approval)
-│   ├── procurement.py       # Procurement/purchase request form
-│   ├── onboarding.py        # New joiner setup form (3 steps)
-│   └── generic_incident.py  # Generic IT incident form
-├── rag/
-│   └── retriever.py         # TF-IDF index + retrieval with memory caching
-├── llm/
-│   └── responder.py         # ONNX model loading + template fallback
 ├── adapters/
-│   └── chainlit_adapter.py  # on_chat_start + on_message handlers
+│   └── fastapi_adapter.py     # /api/message, /api/submit, /api/resolve routes
+├── intent/
+│   └── classifier.py          # Keyword scoring — 10 IT intents + greeting detection
+├── forms/
+│   ├── dispatcher.py          # FORM_MAP: intent → build function
+│   ├── vpn.py                 # VPN issue form
+│   ├── account.py             # Account/MFA issue form
+│   ├── hardware.py            # Hardware fault form
+│   ├── software.py            # Software issue form
+│   ├── network.py             # Network issue form
+│   ├── email_comms.py         # Email/Teams issue form
+│   ├── access.py              # Access request form
+│   ├── procurement.py         # Procurement request form
+│   ├── onboarding.py          # New joiner setup form (3 steps)
+│   └── generic_incident.py    # Generic IT incident form
+├── rag/
+│   └── retriever.py           # TF-IDF index over knowledge/runbooks/
+├── llm/
+│   └── responder.py           # Prompt builders + template fallback
 ├── knowledge/
-│   └── runbooks/            # 10 markdown runbooks (one per intent)
+│   └── runbooks/              # 10 markdown runbooks (one per intent)
+├── public/
+│   └── index.html             # Chat UI — served at /
 └── tests/
-    ├── test_intent.py        # 36 intent tests
-    ├── test_forms.py         # 21 form tests
-    └── test_pipeline.py      # 15 RAG pipeline tests
+    ├── test_intent.py
+    ├── test_forms.py
+    └── test_pipeline.py
 ```
 
-## Setup
-
-### Prerequisites
-
-- Python 3.9+
-- Rust toolchain (for building formora from source)
-- `maturin` build tool: `pip install maturin`
+### Setup
 
 ```bash
-# 1. Clone the repo
 git clone https://github.com/YASSERRMD/DeskFlow.git
 cd DeskFlow
 
-# 2. Create virtual environment
 python -m venv venv
 source venv/bin/activate       # macOS/Linux
 # venv\Scripts\activate        # Windows
 
-# 3. Install dependencies (builds formora from source)
 pip install -r requirements.txt
-
-# 4. Configure environment
 cp .env.example .env
-# Edit .env — set MODEL_PATH to your LFM2.5-350M-ONNX directory
-# The app works without a model using the built-in template fallback
 ```
 
-### (Optional) Download LFM2.5-350M-ONNX
+### Run
 
 ```bash
-# Using Hugging Face CLI
-pip install huggingface_hub
-huggingface-cli download LiquidAI/LFM2.5-350M-ONNX --local-dir ./model/LFM2.5-350M-ONNX
+python3 main.py
+# open http://localhost:8000
 ```
 
-Then set `MODEL_PATH=./model/LFM2.5-350M-ONNX` in `.env`.
+The FastAPI server serves the chat UI at `/` and the frontend-only app at `/web/`.
 
-## Run
+### API Routes
+
+| Method | Path | Description |
+|--------|------|-------------|
+| `POST` | `/api/message` | Detect intent, return chat prompts + form HTML |
+| `POST` | `/api/submit` | RAG retrieval + resolution prompts + INC-XXXX ticket |
+| `POST` | `/api/resolve` | Log browser-generated LLM response |
+| `GET`  | `/api/resolutions` | List all resolved tickets |
+
+---
+
+## Option 2 — Standalone Frontend (`deskflow-web/`)
+
+Zero backend. Everything — intent detection, form building, runbook lookup, and LLM inference — runs in the browser.
+
+### Project Structure
+
+```
+deskflow-web/
+├── index.html     # Full chat UI
+├── formora.js     # JS port of the formora form builder
+├── formora.css    # Dark-theme form styles
+├── forms.js       # All 10 IT support forms built with formora.js
+└── intent.js      # Intent classifier, prompt builders, inline runbooks, template responses
+```
+
+### Run
+
+Served automatically at `/web/` by the FastAPI server. Or run standalone with any static file server:
 
 ```bash
-# Interactive chat (Chainlit)
-chainlit run main.py
-
-# Terminal demo (no Chainlit)
-python3 demo.py
-
-# Tests
-python3 -m pytest tests/ -v
+cd deskflow-web
+python3 -m http.server 8080
+# open http://localhost:8080
 ```
 
-## How to Add New Forms
+> **Note:** Requires a browser with WebGPU support (Chrome 113+). Falls back to template responses when WebGPU is unavailable.
 
-1. Create `forms/<name>.py` with a `build() -> str` function using formora:
-   ```python
-   from formora import Form, CssFramework
+---
 
-   def build() -> str:
-       return (
-           Form("my_form_id")
-           .css(CssFramework.tailwind())
-           .text("field_name", "Field Label", required=True)
-           .submit_label("Submit My Form")
-           .build()
-       )
-   ```
-2. Add keywords to `intent/classifier.py` → `INTENT_KEYWORDS` and an intro to `_INTRO_MESSAGES`
-3. Register in `forms/dispatcher.py` → `FORM_MAP`
-4. Add a template response in `llm/responder.py` → `_TEMPLATE_RESPONSES`
+## WebGPU LLM
 
-## How to Add New Runbooks
+Both versions use `HuggingFaceTB/SmolLM2-360M-Instruct` loaded via `@huggingface/transformers@3.5.0` directly in the browser. The model is downloaded once and cached by the browser. No data leaves the device.
 
-1. Add a `.md`, `.txt`, or `.pdf` file to `knowledge/runbooks/`
-2. The RAG retriever automatically indexes new files on next startup (or `invalidate_index()`)
-3. Structure runbooks with sections: Overview, Common Causes, Resolution Steps, Escalation
+- Model loads in the background — the app is fully usable via templates while loading
+- Streams tokens into chat bubbles as they are generated
+- Falls back to rule-based template responses if WebGPU is unavailable
 
-## How to Swap the LLM Model
-
-1. Set `MODEL_PATH` in `.env` to the new model directory
-2. If the model uses a different architecture than `ORTModelForCausalLM`, update `load_model()` in `llm/responder.py`
-3. Adjust `max_new_tokens` and `do_sample` in the pipeline call as needed
-4. The template fallback activates automatically if model loading fails
+---
 
 ## Tests
 
+```bash
+python3 -m pytest tests/ -v
+```
+
 ```
 72 passing tests:
-  36 intent tests  — all 10 intents, fallback, case insensitivity
-  21 form tests    — all 10 form builds, field content, dispatcher
-  15 pipeline tests — load_knowledge_base, build_index, retrieve_context
+  36 intent tests    — all 10 intents, greeting detection, fallback, case insensitivity
+  21 form tests      — all 10 form builds, field content, dispatcher
+  15 pipeline tests  — load_knowledge_base, build_index, retrieve_context
 ```
+
+---
+
+## Extending DeskFlow
+
+### Add a new form (FastAPI version)
+
+1. Create `forms/<name>.py` with a `build() -> str` function using formora
+2. Add keywords to `intent/classifier.py` → `INTENT_KEYWORDS`
+3. Register in `forms/dispatcher.py` → `FORM_MAP`
+4. Add a template response in `llm/responder.py` → `_TEMPLATE_RESPONSES`
+
+### Add a new form (frontend-only version)
+
+1. Add a builder function in `deskflow-web/forms.js` using `formora.js`
+2. Register it in `FORM_MAP` in `forms.js`
+3. Add intent keywords in `deskflow-web/intent.js` → `INTENT_KEYWORDS`
+4. Add a template response in `intent.js` → `TEMPLATES`
+
+### Add a new runbook (FastAPI version)
+
+Drop a `.md` or `.txt` file into `knowledge/runbooks/`. The TF-IDF index rebuilds automatically on next startup.
+
+### Add runbook context (frontend version)
+
+Add an entry to `RUNBOOKS` in `deskflow-web/intent.js`.
