@@ -282,13 +282,7 @@
 
 <!-- ═══════════════════════════════════════════ WebGPU MODULE ═══ -->
 <script type="module">
-import { pipeline, TextStreamer, env } from 'https://cdn.jsdelivr.net/npm/@huggingface/transformers@4.0.0';
-
-env.allowLocalModels = false;
-if (env.backends?.onnx?.wasm) {
-  env.backends.onnx.wasm.numThreads = 1;
-  env.backends.onnx.wasm.wasmPaths = 'https://cdn.jsdelivr.net/npm/onnxruntime-web/dist/';
-}
+import { pipeline, TextStreamer } from 'https://cdn.jsdelivr.net/npm/@huggingface/transformers@4.0.0';
 
 window._llm = { status: 'idle', generator: null, modelId: null };
 
@@ -326,9 +320,8 @@ function bindGenerate() {
     try {
       await window._llm.generator(messages, {
         max_new_tokens: 512,
-        streamer,
         do_sample: false,
-        num_logits_to_keep: 1,
+        streamer,
       });
       onDone(accumulated || templateResponse);
     } catch (err) {
