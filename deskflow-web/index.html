@@ -177,7 +177,7 @@
 
 <!-- ── Main app logic ────────────────────────────────────────────────────── -->
 <script type="module">
-import { attachForms, isFormoraMessage, parse } from './formora.js';
+import { attachForms } from './formora.js';
 import { dispatchForm }                          from './forms.js';
 import {
   detectIntent, getIntroMessage,
@@ -276,18 +276,34 @@ function injectForm(formHtml, intent) {
   bubble.style.padding = '12px';
   bubble.innerHTML = formHtml;
 
-  // Attach formora submit handler
-  attachForms(bubble, (formResult) => {
+  // Derive the form ID from the injected HTML so we only react to this form
+  const formEl   = bubble.querySelector('form[data-formora-id]');
+  const formId   = formEl?.getAttribute('data-formora-id');
+
+  // Attach formora behaviours (conditions, multi-step, validation)
+  attachForms(bubble);
+
+  // Listen on window for the formora:submit CustomEvent (upstream pattern)
+  function onFormoraSubmit(e) {
+    const { parsed } = e.detail;
+    // Ignore events from other forms on the page
+    if (parsed.formId !== formId) return;
+
+    // Remove this listener — one submission per injected form
+    window.removeEventListener('formora:submit', onFormoraSubmit);
+
     const requestNumber = nextTicket();
 
-    // Show INC pill
+    // Show INC pill above the form
     const pill = document.createElement('div');
     pill.className = 'inc-pill';
     pill.textContent = `✓ ${requestNumber}`;
     bubble.insertBefore(pill, bubble.firstChild);
 
-    handleFormSubmit(formResult, requestNumber, intent);
-  });
+    handleFormSubmit(parsed, requestNumber, intent);
+  }
+
+  window.addEventListener('formora:submit', onFormoraSubmit);
 
   scrollBottom();
 }

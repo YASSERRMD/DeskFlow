@@ -268,21 +268,27 @@ function renderMultiStep(form) {
 
 /**
  * Attach form behaviour to all .frm-form elements inside a container.
- * Call this after injecting form HTML into the DOM.
+ * On submit, dispatches a `formora:submit` CustomEvent on `window`
+ * matching the upstream formora-core behaviour:
+ *   window.addEventListener('formora:submit', e => {
+ *     const { raw, parsed } = e.detail;   // raw = __formora__{...}, parsed = FormResult
+ *   });
  *
  * @param {HTMLElement} container
- * @param {function(FormResult): void} onSubmit   called with parsed result
  */
-export function attachForms(container, onSubmit) {
+export function attachForms(container) {
   container.querySelectorAll('form[data-formora-id]').forEach(form => {
     _attachConditions(form);
-    _attachMultiStep(form, onSubmit);
+    _attachMultiStep(form);
     form.addEventListener('submit', e => {
       e.preventDefault();
       if (!_validate(form)) return;
       const result = _collect(form);
       _showSuccess(form);
-      onSubmit(result);
+      // Dispatch on window — matches formora-core renderer output
+      window.dispatchEvent(new CustomEvent('formora:submit', {
+        detail: { raw: result.toMessage(), parsed: result },
+      }));
     });
   });
 }
@@ -322,14 +328,14 @@ function _evalCondition(cond, val) {
 
 // ── Multi-step wiring ────────────────────────────────────────────────────── //
 
-function _attachMultiStep(form, onSubmit) {
+function _attachMultiStep(form) {
   const stepEls = form.querySelectorAll('.frm-step');
   if (!stepEls.length) return;
 
   const total    = stepEls.length;
   let current    = 0;
-  const formId   = form.dataset.aforaId || form.closest('[data-formora-id]')?.dataset.aforaId || '';
-  const progress = document.getElementById(`${form.closest('[data-formora-id]')?.dataset.aforaId || ''}-progress`);
+  const formId   = form.getAttribute('data-formora-id') || form.closest('[data-formora-id]')?.getAttribute('data-formora-id') || '';
+  const progress = document.getElementById(`${formId}-progress`);
   const label    = form.closest('.frm-wrapper')?.querySelector('.frm-progress-label');
   const btnBack  = form.querySelector('.frm-btn-back');
   const btnNext  = form.querySelector('.frm-btn-next');
@@ -403,7 +409,7 @@ function _clearError(el) {
 // ── Data collection ──────────────────────────────────────────────────────── //
 
 function _collect(form) {
-  const formId  = form.dataset.aforaId || form.closest('[data-formora-id]')?.dataset.aforaId || form.closest('[data-formora-id]')?.getAttribute('data-formora-id') || '';
+  const formId  = form.getAttribute('data-formora-id') || form.closest('[data-formora-id]')?.getAttribute('data-formora-id') || '';
   const data    = {};
   const typed   = {};
 
