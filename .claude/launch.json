@@ -1,0 +1,17 @@
+{
+  "version": "0.0.1",
+  "configurations": [
+    {
+      "name": "DeskFlow",
+      "runtimeExecutable": "python3",
+      "runtimeArgs": ["-m", "uvicorn", "main:app", "--host", "0.0.0.0", "--port", "8000", "--loop", "asyncio", "--http", "h11"],
+      "port": 8000
+    },
+    {
+      "name": "DeskFlow-Web",
+      "runtimeExecutable": "python3",
+      "runtimeArgs": ["/Users/mdyasser/Documents/projects/DeskFlow/.claude/worktrees/trusting-beaver/deskflow-web/serve.py", "8080"],
+      "port": 8080
+    }
+  ]
+}

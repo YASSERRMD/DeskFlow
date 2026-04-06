@@ -1,0 +1,8 @@
+formora @ git+https://github.com/YASSERRMD/formora.git#subdirectory=formora-py
+fastapi
+uvicorn[standard]
+python-dotenv
+rich
+pypdf
+scikit-learn
+numpy
