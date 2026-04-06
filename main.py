@@ -55,8 +55,11 @@ app.add_middleware(COOPCOEPMiddleware)
 # Register API routes
 app.include_router(router)
 
-# Serve the frontend from public/
+# Serve the original FastAPI frontend from public/
 app.mount("/static", StaticFiles(directory="public"), name="static")
+
+# Serve the standalone frontend-only app from deskflow-web/
+app.mount("/web", StaticFiles(directory="deskflow-web", html=True), name="deskflow-web")
 
 
 @app.get("/", response_class=FileResponse)
