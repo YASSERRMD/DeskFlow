@@ -136,7 +136,7 @@
       data-model-id="HuggingFaceTB/SmolLM2-360M-Instruct"
       data-model-label="SmolLM2-360M">SmolLM2</button>
     <button class="model-pill"
-      data-model-id="LiquidAI/LFM2.5-350M-ONNX"
+      data-model-id="onnx-community/LFM2.5-350M-ONNX"
       data-model-label="LFM2.5-350M">LFM2.5</button>
   </div>
 
@@ -490,14 +490,11 @@ function bindGenerate() {
         skip_prompt: true,
         callback_function: (token) => { accumulated += token; onToken(accumulated); },
       });
-      // LFM2.5 requires num_logits_to_keep=1 as a mandatory ONNX input
-      const isLFM = (window._llm.modelId || '').includes('LFM');
       const result = await window._llm.generator(messages, {
         max_new_tokens: 512,
         temperature: 0.7,
         do_sample: true,
         streamer,
-        ...(isLFM ? { num_logits_to_keep: 1 } : {}),
       });
       const finalText = result?.[0]?.generated_text?.at?.(-1)?.content || accumulated;
       onDone(finalText || accumulated);
