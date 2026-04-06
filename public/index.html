@@ -328,6 +328,7 @@ function bindGenerate() {
         max_new_tokens: 512,
         streamer,
         do_sample: false,
+        num_logits_to_keep: 1,
       });
       onDone(accumulated || templateResponse);
     } catch (err) {
