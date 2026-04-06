@@ -533,20 +533,21 @@ function injectForm(formHtml, intent) {
   messagesEl.appendChild(wrap);
   scrollBottom();
 
-  const form = bubble.querySelector('form[data-formora]');
-  if (!form) return;
+  // Get the form ID from the data-formora-id wrapper (formora-core pattern)
+  const formId = bubble.querySelector('[data-formora-id]')?.getAttribute('data-formora-id') || '';
 
-  const steps = form.querySelectorAll('.formora-step');
-  if (steps.length > 1) setupStepWizard(form, steps);
+  // Listen on window for formora:submit CustomEvent — matches formora-core renderer output
+  async function onFormoraSubmit(e) {
+    const { raw } = e.detail;
+    // Parse the __formora__{...} message to get form_id and data
+    let payload;
+    try { payload = JSON.parse(raw.slice('__formora__'.length)); } catch { return; }
+    if (payload.form_id !== formId) return; // not this form
 
-  form.addEventListener('submit', async (e) => {
-    e.preventDefault();
-    const submitBtn = form.querySelector('button[type=submit]');
-    if (submitBtn) { submitBtn.disabled = true; submitBtn.textContent = 'Submitting…'; }
+    // One submission per form
+    window.removeEventListener('formora:submit', onFormoraSubmit);
 
-    const formData = collectFormData(form);
-    const formId   = form.id;
-
+    const formData = payload.data;
     const typingBubble = addTyping();
     let apiData;
     try {
@@ -558,11 +559,10 @@ function injectForm(formHtml, intent) {
     } catch (_err) {
       typingBubble.closest('.flex.justify-start').remove();
       addTextBubble('Failed to process your request. Please try again.');
-      if (submitBtn) { submitBtn.disabled = false; submitBtn.textContent = 'Submit'; }
       return;
     }
 
-    // Collapse form to a compact pill showing the ticket number
+    // Collapse form bubble to a compact ticket pill
     const reqNum = apiData.request_number || '';
     bubble.className = 'rounded-xl px-4 py-2 text-xs font-medium flex items-center gap-2';
     bubble.style.cssText = 'background:#1c2128;border:1px solid #3fb95022;color:#3fb950;max-width:44rem';
@@ -580,14 +580,13 @@ function injectForm(formHtml, intent) {
     }
 
     const llmGenerate = window._llmGenerate;
-    if (typeof llmGenerate !== 'function') {
+    if (typeof llmGenerate !== 'function' || window._llm?.status !== 'ready') {
       addMarkdownBubble(apiData.template_response);
       resolveTicket(apiData.template_response, 'template');
       return;
     }
 
     const streaming = createStreamingBubble();
-
     llmGenerate(
       apiData.system_prompt,
       apiData.user_prompt,
@@ -596,73 +595,15 @@ function injectForm(formHtml, intent) {
       (final)    => { streaming.done(final); resolveTicket(final, 'webgpu'); },
       (template) => { streaming.remove(); addMarkdownBubble(template); resolveTicket(template, 'template'); },
     );
-
     scrollBottom();
-  });
-}
-
-function collectFormData(form) {
-  const data = {};
-  form.querySelectorAll('input, select, textarea').forEach(field => {
-    if (!field.name) return;
-    if (field.type === 'checkbox') data[field.name] = field.checked;
-    else if (field.tagName === 'SELECT' && field.multiple)
-      data[field.name] = Array.from(field.selectedOptions).map(o => o.value);
-    else if (field.value !== '') data[field.name] = field.value;
-  });
-  return data;
-}
-
-// ── Step wizard ───────────────────────────────────────────────────── //
-function setupStepWizard(form, steps) {
-  let current = 0;
-  steps[0].classList.add('active');
-  const submitBtn = form.querySelector('button[type=submit]');
-  if (submitBtn) submitBtn.style.display = 'none';
-
-  function renderNav() {
-    form.querySelectorAll('.step-nav, .step-progress').forEach(el => el.remove());
-
-    // Progress pips
-    const pips = document.createElement('div');
-    pips.className = 'step-progress';
-    steps.forEach((_, i) => {
-      const pip = document.createElement('div');
-      pip.className = 'step-pip' + (i <= current ? ' active' : '');
-      pips.appendChild(pip);
-    });
-    form.appendChild(pips);
-
-    const nav = document.createElement('div');
-    nav.className = 'step-nav';
-
-    if (current > 0) {
-      const back = document.createElement('button');
-      back.type = 'button'; back.className = 'btn-back'; back.textContent = '← Back';
-      back.onclick = () => goStep(current - 1);
-      nav.appendChild(back);
-    }
-    if (current < steps.length - 1) {
-      const next = document.createElement('button');
-      next.type = 'button'; next.className = 'btn-next'; next.textContent = 'Continue →';
-      next.onclick = () => goStep(current + 1);
-      nav.appendChild(next);
-    } else {
-      if (submitBtn) { submitBtn.style.display = 'block'; submitBtn.style.marginTop = '1rem'; }
-    }
-    form.appendChild(nav);
   }
 
-  function goStep(n) {
-    steps[current].classList.remove('active');
-    if (submitBtn && current === steps.length - 1) submitBtn.style.display = 'none';
-    current = n;
-    steps[current].classList.add('active');
-    renderNav(); scrollBottom();
-  }
-
-  renderNav();
+  window.addEventListener('formora:submit', onFormoraSubmit);
 }
+
+// collectFormData and setupStepWizard removed:
+// formora-core now handles data collection and multi-step navigation
+// via its own inline JavaScript, dispatching window formora:submit.
 </script>
 
 </body>
