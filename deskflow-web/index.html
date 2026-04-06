@@ -1,0 +1,486 @@
+<!DOCTYPE html>
+<html lang="en" class="dark">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>DeskFlow — IT Helpdesk</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+  <script src="https://cdn.tailwindcss.com"></script>
+  <script>
+    tailwind.config = {
+      darkMode: 'class',
+      theme: {
+        extend: {
+          fontFamily: { sans: ['Inter', 'system-ui', 'sans-serif'] },
+          colors: {
+            surface:  '#0d1117',
+            panel:    '#161b22',
+            card:     '#1c2128',
+            border:   '#30363d',
+            muted:    '#8b949e',
+            text:     '#adbac7',
+            bright:   '#e6edf3',
+            accent:   '#388bfd',
+            'accent-dark': '#1f6feb',
+            success:  '#3fb950',
+            danger:   '#f85149',
+            warning:  '#d29922',
+          }
+        }
+      }
+    }
+  </script>
+  <link rel="stylesheet" href="formora.css" />
+  <style>
+    * { box-sizing: border-box; }
+    body { margin: 0; background: #0d1117; color: #adbac7; font-family: 'Inter', system-ui, sans-serif; }
+    html, body, #root { height: 100%; }
+
+    /* Scrollbar */
+    ::-webkit-scrollbar { width: 6px; }
+    ::-webkit-scrollbar-track { background: transparent; }
+    ::-webkit-scrollbar-thumb { background: #30363d; border-radius: 3px; }
+
+    /* Typing dots */
+    .typing-dot {
+      width: 6px; height: 6px; background: #58a6ff;
+      border-radius: 50%; animation: typing-bounce 1.2s infinite;
+    }
+    .typing-dot:nth-child(2) { animation-delay: 0.2s; }
+    .typing-dot:nth-child(3) { animation-delay: 0.4s; }
+    @keyframes typing-bounce {
+      0%,60%,100% { transform: translateY(0); opacity: 0.4; }
+      30% { transform: translateY(-4px); opacity: 1; }
+    }
+
+    /* Streaming cursor */
+    .streaming-cursor::after {
+      content: '▋'; display: inline-block;
+      animation: blink 0.8s step-end infinite; color: #388bfd;
+    }
+    @keyframes blink { 0%,100% { opacity: 1; } 50% { opacity: 0; } }
+
+    /* Markdown body */
+    .md-body h2 { font-size: 0.9rem; font-weight: 600; color: #e6edf3; margin: 0 0 8px; }
+    .md-body h3 { font-size: 0.85rem; font-weight: 600; color: #e6edf3; margin: 8px 0 4px; }
+    .md-body p  { margin: 4px 0; }
+    .md-body ol,.md-body ul { margin: 6px 0; padding-left: 18px; }
+    .md-body li { margin: 3px 0; }
+    .md-body strong { color: #e6edf3; font-weight: 600; }
+    .md-body code { background: #0d1117; border: 1px solid #30363d; border-radius: 3px; padding: 1px 5px; font-size: 0.8rem; color: #79c0ff; font-family: 'SF Mono', Consolas, monospace; }
+    .md-body blockquote { border-left: 3px solid #d29922; margin: 8px 0; padding: 4px 10px; background: rgba(210,153,34,0.07); border-radius: 0 4px 4px 0; color: #d29922; }
+    .md-body blockquote p { margin: 0; }
+
+    /* Collapsed pill */
+    .ticket-pill {
+      display: inline-flex; align-items: center; gap: 6px;
+      background: rgba(56,139,253,0.1); border: 1px solid rgba(56,139,253,0.25);
+      border-radius: 20px; padding: 4px 12px; font-size: 0.75rem;
+      color: #58a6ff; cursor: default; user-select: none;
+    }
+
+    /* Model status bar */
+    #model-progress-bar { transition: width 0.4s ease; }
+
+    /* Suggestion chips */
+    .chip {
+      display: inline-flex; align-items: center; gap: 6px;
+      background: #1c2128; border: 1px solid #30363d; border-radius: 20px;
+      padding: 6px 14px; font-size: 0.8rem; color: #8b949e;
+      cursor: pointer; transition: border-color .15s, color .15s;
+      white-space: nowrap;
+    }
+    .chip:hover { border-color: #388bfd; color: #58a6ff; }
+
+    /* INC pill */
+    .inc-pill {
+      font-size: 0.7rem; color: #3fb950;
+      background: rgba(63,185,80,0.08); border: 1px solid rgba(63,185,80,0.2);
+      border-radius: 12px; padding: 2px 8px; display: inline-block; margin-bottom: 6px;
+    }
+  </style>
+</head>
+<body class="flex flex-col h-full">
+
+<!-- ── Header ────────────────────────────────────────────────────────────── -->
+<header class="flex items-center px-4 py-3 border-b shrink-0" style="background:#161b22;border-color:#21262d">
+  <div class="flex items-center gap-2.5">
+    <div class="w-8 h-8 rounded-xl flex items-center justify-center" style="background:linear-gradient(135deg,#1f6feb,#388bfd)">
+      <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="white" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
+        <path d="M9 17H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2v3"/>
+        <path d="M13 21l2-2 4 4 2-2-4-4 2-2-6-1z"/>
+      </svg>
+    </div>
+    <div>
+      <div class="font-semibold text-sm" style="color:#e6edf3">DeskFlow</div>
+      <div class="text-xs" style="color:#8b949e">IT Support Assistant</div>
+    </div>
+  </div>
+  <div id="model-status-wrap" class="ml-auto flex items-center gap-3">
+    <div id="model-progress-wrap" class="w-36 h-1 rounded-full hidden" style="background:#21262d">
+      <div id="model-progress-bar" class="h-1 rounded-full" style="width:0%;background:#388bfd"></div>
+    </div>
+    <div id="model-status" class="text-xs font-medium" style="color:#d29922">⏳ Loading AI…</div>
+  </div>
+</header>
+
+<!-- ── Chat area ─────────────────────────────────────────────────────────── -->
+<main id="messages" class="flex-1 overflow-y-auto px-4 py-6 flex flex-col gap-4">
+
+  <!-- Empty state -->
+  <div id="empty-state" class="flex flex-col items-center justify-center flex-1 gap-6 py-12">
+    <div class="w-16 h-16 rounded-2xl flex items-center justify-center" style="background:linear-gradient(135deg,#1f6feb,#388bfd)">
+      <svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="white" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+        <path d="M9 17H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2v3"/>
+        <path d="M13 21l2-2 4 4 2-2-4-4 2-2-6-1z"/>
+      </svg>
+    </div>
+    <div class="text-center">
+      <h2 class="text-lg font-semibold mb-1" style="color:#e6edf3">Hi, I'm DeskFlow</h2>
+      <p class="text-sm" style="color:#8b949e">Your AI-powered IT support assistant.<br/>Tell me what's going on — I'll help you fix it.</p>
+    </div>
+    <div class="flex flex-wrap gap-2 justify-center max-w-lg">
+      <button class="chip" data-msg="My VPN isn't connecting">🔒 VPN not connecting</button>
+      <button class="chip" data-msg="My account is locked">🔑 Account locked</button>
+      <button class="chip" data-msg="Laptop screen is broken">💻 Hardware issue</button>
+      <button class="chip" data-msg="Outlook is not working">📧 Email issue</button>
+      <button class="chip" data-msg="I need access to a shared drive">🗂️ Access request</button>
+      <button class="chip" data-msg="I'm a new joiner, need setup">👋 New joiner setup</button>
+    </div>
+  </div>
+
+</main>
+
+<!-- ── Input bar ─────────────────────────────────────────────────────────── -->
+<footer class="shrink-0 px-4 py-3 border-t" style="background:#161b22;border-color:#21262d">
+  <div class="flex items-end gap-2 max-w-3xl mx-auto">
+    <textarea id="msg-input" rows="1"
+      placeholder="Describe your IT issue…"
+      class="flex-1 resize-none rounded-xl px-4 py-3 text-sm outline-none transition"
+      style="background:#1c2128;border:1px solid #30363d;color:#e6edf3;max-height:140px;line-height:1.5;font-family:inherit"
+      oninput="this.style.height='auto';this.style.height=Math.min(this.scrollHeight,140)+'px'"
+    ></textarea>
+    <button id="send-btn" class="rounded-xl px-4 py-3 text-sm font-medium shrink-0 transition"
+      style="background:linear-gradient(135deg,#1f6feb,#388bfd);color:white;border:none;cursor:pointer">
+      <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
+        <line x1="22" y1="2" x2="11" y2="13"/><polygon points="22 2 15 22 11 13 2 9 22 2"/>
+      </svg>
+    </button>
+  </div>
+  <p class="text-center text-xs mt-2" style="color:#30363d">DeskFlow Web · Powered by WebGPU · All processing is local</p>
+</footer>
+
+<!-- ── Marked.js for markdown rendering ─────────────────────────────────── -->
+<script src="https://cdn.jsdelivr.net/npm/marked@9/marked.min.js"></script>
+
+<!-- ── Main app logic ────────────────────────────────────────────────────── -->
+<script type="module">
+import { attachForms, isFormoraMessage, parse } from './formora.js';
+import { dispatchForm }                          from './forms.js';
+import {
+  detectIntent, getIntroMessage,
+  buildChatSystemPrompt, buildResolutionSystemPrompt,
+  formResultToPrompt, generateTemplateResponse,
+} from './intent.js';
+
+// ── DOM refs ──────────────────────────────────────────────────────────────── //
+const messagesEl   = document.getElementById('messages');
+const emptyState   = document.getElementById('empty-state');
+const msgInput     = document.getElementById('msg-input');
+const sendBtn      = document.getElementById('send-btn');
+const statusEl     = document.getElementById('model-status');
+const progressWrap = document.getElementById('model-progress-wrap');
+const progressBar  = document.getElementById('model-progress-bar');
+const statusWrap   = document.getElementById('model-status-wrap');
+
+// ── Ticket counter ────────────────────────────────────────────────────────── //
+let _ticketSeq = Math.floor(Math.random() * 9000) + 1000;
+function nextTicket() { return `INC-${++_ticketSeq}`; }
+
+// ── LLM reference (set by WebGPU module) ─────────────────────────────────── //
+window._llm         = { status: 'idle', generator: null };
+window._llmGenerate = null;
+
+// ── Helpers ───────────────────────────────────────────────────────────────── //
+function esc(s) { return String(s).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;'); }
+
+function scrollBottom() {
+  requestAnimationFrame(() => messagesEl.scrollTop = messagesEl.scrollHeight);
+}
+
+function hideEmptyState() {
+  emptyState.style.display = 'none';
+}
+
+function setLoading(on) {
+  sendBtn.disabled  = on;
+  msgInput.disabled = on;
+  sendBtn.style.opacity = on ? '0.5' : '1';
+}
+
+// ── Bot row factory ───────────────────────────────────────────────────────── //
+function addBotRow(innerHTML) {
+  const wrap = document.createElement('div');
+  wrap.className = 'flex justify-start';
+
+  const row = document.createElement('div');
+  row.className = 'flex items-start gap-3 max-w-3xl';
+
+  const avatar = document.createElement('div');
+  avatar.className = 'w-7 h-7 rounded-lg flex-shrink-0 flex items-center justify-center mt-0.5';
+  avatar.style.cssText = 'background:linear-gradient(135deg,#1f6feb,#388bfd)';
+  avatar.innerHTML = `<svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="white" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M9 17H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2v3"/><path d="M13 21l2-2 4 4 2-2-4-4 2-2-6-1z"/></svg>`;
+
+  const bubble = document.createElement('div');
+  bubble.className = 'rounded-2xl rounded-tl-sm px-4 py-3 text-sm leading-relaxed';
+  bubble.style.cssText = 'background:#1c2128;border:1px solid #30363d;color:#adbac7;max-width:44rem;flex:1';
+  bubble.innerHTML = innerHTML;
+
+  row.appendChild(avatar);
+  row.appendChild(bubble);
+  wrap.appendChild(row);
+  messagesEl.appendChild(wrap);
+  scrollBottom();
+  return bubble;
+}
+
+function addUserBubble(text) {
+  const wrap = document.createElement('div');
+  wrap.className = 'flex justify-end';
+  const bubble = document.createElement('div');
+  bubble.className = 'rounded-2xl rounded-tr-sm px-4 py-3 text-sm leading-relaxed';
+  bubble.style.cssText = 'background:linear-gradient(135deg,#1f6feb,#388bfd);color:white;max-width:32rem';
+  bubble.textContent = text;
+  wrap.appendChild(bubble);
+  messagesEl.appendChild(wrap);
+  scrollBottom();
+}
+
+function addTextBubble(text) {
+  return addBotRow(`<span style="color:#adbac7">${esc(text)}</span>`);
+}
+
+function addMarkdownBubble(md) {
+  return addBotRow(`<div class="md-body">${marked.parse(md)}</div>`);
+}
+
+function addTyping() {
+  return addBotRow('<div class="flex items-center gap-1.5 py-1"><span class="typing-dot"></span><span class="typing-dot"></span><span class="typing-dot"></span></div>');
+}
+
+// ── Form injection ────────────────────────────────────────────────────────── //
+function injectForm(formHtml, intent) {
+  const bubble = addBotRow('');
+  bubble.style.padding = '12px';
+  bubble.innerHTML = formHtml;
+
+  // Attach formora submit handler
+  attachForms(bubble, (formResult) => {
+    const requestNumber = nextTicket();
+
+    // Show INC pill
+    const pill = document.createElement('div');
+    pill.className = 'inc-pill';
+    pill.textContent = `✓ ${requestNumber}`;
+    bubble.insertBefore(pill, bubble.firstChild);
+
+    handleFormSubmit(formResult, requestNumber, intent);
+  });
+
+  scrollBottom();
+}
+
+// ── Form submit → LLM resolution ─────────────────────────────────────────── //
+function handleFormSubmit(formResult, requestNumber, intent) {
+  const systemPrompt    = buildResolutionSystemPrompt(formResult.formId, requestNumber);
+  const userPrompt      = formResultToPrompt(formResult);
+  const templateResponse = generateTemplateResponse(formResult, requestNumber);
+
+  const typing = addTyping();
+
+  // Show template immediately, enhance with LLM in background
+  function showTemplate() {
+    typing.closest('.flex.justify-start')?.remove();
+    addMarkdownBubble(templateResponse);
+  }
+
+  const llmGenerate = window._llmGenerate;
+  if (typeof llmGenerate !== 'function' || window._llm?.status !== 'ready') {
+    showTemplate();
+    return;
+  }
+
+  typing.closest('.flex.justify-start')?.remove();
+  const chatBubble = addBotRow('<div class="md-body streaming-cursor"></div>');
+  const innerEl    = chatBubble.querySelector('.md-body');
+
+  llmGenerate(
+    systemPrompt, userPrompt, templateResponse,
+    (acc)   => { innerEl.className = 'md-body streaming-cursor'; innerEl.innerHTML = marked.parse(acc); scrollBottom(); },
+    (final) => { innerEl.className = 'md-body'; innerEl.innerHTML = marked.parse(final || templateResponse); scrollBottom(); },
+    (_t)    => { chatBubble.remove(); addMarkdownBubble(templateResponse); },
+  );
+}
+
+// ── Send message ──────────────────────────────────────────────────────────── //
+async function sendMessage() {
+  const text = msgInput.value.trim();
+  if (!text) return;
+
+  hideEmptyState();
+  addUserBubble(text);
+  msgInput.value = '';
+  msgInput.style.height = 'auto';
+  setLoading(true);
+
+  const typingBubble = addTyping();
+  const intent = detectIntent(text);
+  const templateChat = getIntroMessage(intent);
+  const formHtml = dispatchForm(intent);
+
+  // Simulate minimal network delay so typing bubble is visible
+  await new Promise(r => setTimeout(r, 180));
+  typingBubble.closest('.flex.justify-start')?.remove();
+
+  // 1. Show chat response immediately
+  const chatBubble = addTextBubble(templateChat);
+
+  // 2. Inject form immediately if intent needs one
+  if (formHtml) {
+    injectForm(formHtml, intent);
+  } else {
+    msgInput.focus();
+  }
+  setLoading(false);
+
+  // 3. Enhance chat bubble with LLM in background
+  const llmGenerate = window._llmGenerate;
+  if (typeof llmGenerate !== 'function' || window._llm?.status !== 'ready') return;
+
+  chatBubble.innerHTML = '<div class="md-body streaming-cursor"></div>';
+  const innerEl = chatBubble.querySelector('.md-body');
+
+  llmGenerate(
+    buildChatSystemPrompt(), text, templateChat,
+    (acc)   => { innerEl.className = 'md-body streaming-cursor'; innerEl.innerHTML = marked.parse(acc); scrollBottom(); },
+    (final) => { innerEl.className = 'md-body'; innerEl.innerHTML = marked.parse(final || templateChat); scrollBottom(); },
+    (_t)    => { chatBubble.textContent = templateChat; },
+  );
+}
+
+// ── Event listeners ───────────────────────────────────────────────────────── //
+msgInput.addEventListener('keydown', e => {
+  if (e.key === 'Enter' && !e.shiftKey) { e.preventDefault(); sendMessage(); }
+});
+sendBtn.addEventListener('click', sendMessage);
+
+document.querySelectorAll('.chip').forEach(chip => {
+  chip.addEventListener('click', () => {
+    msgInput.value = chip.dataset.msg;
+    sendMessage();
+  });
+});
+</script>
+
+<!-- ── WebGPU / LLM module ───────────────────────────────────────────────── -->
+<script type="module">
+import { pipeline, TextStreamer, env }
+  from 'https://cdn.jsdelivr.net/npm/@huggingface/transformers@3.5.0/dist/transformers.min.js';
+
+env.allowLocalModels = false;
+if (env.backends?.onnx?.wasm) {
+  env.backends.onnx.wasm.numThreads = 1;
+  env.backends.onnx.wasm.wasmPaths = 'https://cdn.jsdelivr.net/npm/onnxruntime-web/dist/';
+}
+
+const MODEL_ID    = 'HuggingFaceTB/SmolLM2-360M-Instruct';
+const statusEl    = document.getElementById('model-status');
+const progressWrap= document.getElementById('model-progress-wrap');
+const progressBar = document.getElementById('model-progress-bar');
+const statusWrap  = document.getElementById('model-status-wrap');
+
+function setStatusUI(text, color, pct) {
+  statusEl.textContent = text;
+  statusEl.style.color = color;
+  if (pct != null) {
+    progressWrap.classList.remove('hidden');
+    progressBar.style.width = Math.round(pct) + '%';
+  } else {
+    progressWrap.classList.add('hidden');
+  }
+}
+
+if (!navigator.gpu) {
+  window._llm.status = 'unavailable';
+  setStatusUI('⚠️ Templates only (no WebGPU)', '#d29922', null);
+  setTimeout(() => statusWrap.classList.add('hidden'), 4000);
+} else {
+  setStatusUI('⏳ Loading AI…', '#d29922', 0);
+  progressWrap.classList.remove('hidden');
+
+  (async () => {
+    window._llm.status = 'loading';
+    try {
+      window._llm.generator = await pipeline('text-generation', MODEL_ID, {
+        dtype: 'q4',
+        device: 'webgpu',
+        progress_callback: (p) => {
+          if (p.status !== 'progress') return;
+          setStatusUI(`⏳ Loading AI… ${Math.round(p.progress ?? 0)}%`, '#d29922', p.progress ?? 0);
+        },
+      });
+      window._llm.status = 'ready';
+      setStatusUI('✅ AI model ready', '#3fb950', null);
+      setTimeout(() => statusWrap.classList.add('hidden'), 3000);
+    } catch (err) {
+      console.error('[DeskFlow] Model load failed:', err);
+      window._llm.status = 'error';
+      setStatusUI('⚠️ Templates only (AI unavailable)', '#d29922', null);
+      setTimeout(() => statusWrap.classList.add('hidden'), 5000);
+    }
+  })();
+
+  /**
+   * Generate text using the WebGPU model.
+   * @param {string}   systemPrompt
+   * @param {string}   userPrompt
+   * @param {string}   templateFallback
+   * @param {function} onToken   - called with accumulated text each token
+   * @param {function} onDone    - called with final text
+   * @param {function} onFallback - called with templateFallback if model fails
+   */
+  window._llmGenerate = async function(systemPrompt, userPrompt, templateFallback, onToken, onDone, onFallback) {
+    if (!window._llm.generator) { onFallback(templateFallback); return; }
+    try {
+      const messages = [
+        { role: 'system',    content: systemPrompt },
+        { role: 'user',      content: userPrompt   },
+      ];
+      let accumulated = '';
+      const streamer = new TextStreamer(window._llm.generator.tokenizer, {
+        skip_prompt: true,
+        callback_function: (token) => {
+          accumulated += token;
+          onToken(accumulated);
+        },
+      });
+      const result = await window._llm.generator(messages, {
+        max_new_tokens: 512,
+        temperature: 0.7,
+        do_sample: true,
+        streamer,
+      });
+      const finalText = result?.[0]?.generated_text?.at?.(-1)?.content || accumulated;
+      onDone(finalText || accumulated);
+    } catch (err) {
+      console.error('[DeskFlow] Generation failed:', err);
+      onFallback(templateFallback);
+    }
+  };
+}
+</script>
+
+</body>
+</html>
