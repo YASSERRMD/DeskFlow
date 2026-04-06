@@ -1,0 +1,225 @@
+/*
+ * formora.css — Dark-theme form styles for DeskFlow Web.
+ * Matches the surface/panel/card palette of the parent app.
+ */
+
+.frm-wrapper {
+  font-family: 'Inter', system-ui, sans-serif;
+  font-size: 0.875rem;
+  color: #adbac7;
+  width: 100%;
+}
+
+.frm-title {
+  font-size: 0.95rem;
+  font-weight: 600;
+  color: #e6edf3;
+  margin-bottom: 4px;
+}
+
+.frm-desc {
+  font-size: 0.8rem;
+  color: #8b949e;
+  margin-bottom: 12px;
+}
+
+/* Progress bar */
+.frm-progress-label {
+  font-size: 0.75rem;
+  color: #8b949e;
+  margin-bottom: 4px;
+}
+
+.frm-progress-bar {
+  height: 4px;
+  background: #30363d;
+  border-radius: 2px;
+  margin-bottom: 16px;
+  overflow: hidden;
+}
+
+.frm-progress-fill {
+  height: 100%;
+  background: linear-gradient(90deg, #1f6feb, #388bfd);
+  border-radius: 2px;
+  transition: width 0.3s ease;
+}
+
+/* Step title */
+.frm-step-title {
+  font-size: 0.8rem;
+  font-weight: 600;
+  color: #58a6ff;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+  margin-bottom: 10px;
+}
+
+/* Fields */
+.frm-field {
+  margin-bottom: 12px;
+}
+
+.frm-label {
+  display: block;
+  font-size: 0.8rem;
+  font-weight: 500;
+  color: #8b949e;
+  margin-bottom: 4px;
+}
+
+.frm-req {
+  color: #f85149;
+  margin-left: 2px;
+}
+
+.frm-input {
+  width: 100%;
+  background: #0d1117;
+  border: 1px solid #30363d;
+  border-radius: 6px;
+  color: #e6edf3;
+  font-size: 0.875rem;
+  font-family: inherit;
+  padding: 7px 10px;
+  box-sizing: border-box;
+  transition: border-color 0.15s, box-shadow 0.15s;
+  outline: none;
+  -webkit-appearance: none;
+  appearance: none;
+}
+
+.frm-input:focus {
+  border-color: #1f6feb;
+  box-shadow: 0 0 0 3px rgba(31, 111, 235, 0.15);
+}
+
+.frm-input.frm-invalid {
+  border-color: #f85149;
+  box-shadow: 0 0 0 3px rgba(248, 81, 73, 0.15);
+}
+
+.frm-textarea {
+  resize: vertical;
+  min-height: 80px;
+}
+
+.frm-select {
+  cursor: pointer;
+  background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='12' viewBox='0 0 24 24' fill='none' stroke='%238b949e' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpolyline points='6 9 12 15 18 9'/%3E%3C/svg%3E");
+  background-repeat: no-repeat;
+  background-position: right 10px center;
+  padding-right: 30px;
+}
+
+/* Radio */
+.frm-radio-group {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  margin-top: 4px;
+}
+
+.frm-radio-label {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  cursor: pointer;
+  font-size: 0.875rem;
+  color: #adbac7;
+}
+
+.frm-radio-label input[type="radio"] {
+  accent-color: #388bfd;
+  width: 14px;
+  height: 14px;
+  cursor: pointer;
+  flex-shrink: 0;
+}
+
+/* Checkbox */
+.frm-checkbox-label {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  cursor: pointer;
+  font-size: 0.875rem;
+  color: #adbac7;
+}
+
+.frm-checkbox-label input[type="checkbox"] {
+  accent-color: #388bfd;
+  width: 14px;
+  height: 14px;
+  cursor: pointer;
+  flex-shrink: 0;
+}
+
+/* Errors */
+.frm-error-msg {
+  font-size: 0.75rem;
+  color: #f85149;
+  margin-top: 3px;
+}
+
+/* Buttons */
+.frm-actions,
+.frm-nav {
+  display: flex;
+  gap: 8px;
+  margin-top: 16px;
+  justify-content: flex-end;
+}
+
+.frm-btn-submit,
+.frm-btn-next {
+  background: linear-gradient(135deg, #1f6feb, #388bfd);
+  color: #fff;
+  border: none;
+  border-radius: 6px;
+  padding: 7px 16px;
+  font-size: 0.875rem;
+  font-weight: 500;
+  font-family: inherit;
+  cursor: pointer;
+  transition: opacity 0.15s;
+}
+
+.frm-btn-submit:hover,
+.frm-btn-next:hover {
+  opacity: 0.88;
+}
+
+.frm-btn-back {
+  background: transparent;
+  color: #8b949e;
+  border: 1px solid #30363d;
+  border-radius: 6px;
+  padding: 7px 14px;
+  font-size: 0.875rem;
+  font-family: inherit;
+  cursor: pointer;
+  transition: border-color 0.15s, color 0.15s;
+}
+
+.frm-btn-back:hover {
+  border-color: #58a6ff;
+  color: #58a6ff;
+}
+
+/* Success message */
+.frm-success {
+  font-size: 0.875rem;
+  color: #3fb950;
+  background: rgba(63, 185, 80, 0.08);
+  border: 1px solid rgba(63, 185, 80, 0.2);
+  border-radius: 6px;
+  padding: 10px 14px;
+  margin-top: 8px;
+}
+
+/* Select option dark hack for some browsers */
+.frm-select option {
+  background: #1c2128;
+  color: #e6edf3;
+}
