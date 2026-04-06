@@ -306,6 +306,7 @@ function injectForm(formHtml, intent) {
   window.addEventListener('formora:submit', onFormoraSubmit);
 
   scrollBottom();
+  return bubble;
 }
 
 // ── Form submit → LLM resolution ─────────────────────────────────────────── //
@@ -364,12 +365,18 @@ async function sendMessage() {
   const chatBubble = addTextBubble(templateChat);
 
   // 2. Inject form immediately if intent needs one
-  if (formHtml) {
-    injectForm(formHtml, intent);
+  const injectedBubble = formHtml ? injectForm(formHtml, intent) : null;
+  setLoading(false);
+
+  // 3. Focus: first visible field in the form, or back to chat input
+  if (injectedBubble) {
+    const firstField = injectedBubble.querySelector(
+      'input:not([type="hidden"]):not([disabled]), select:not([disabled]), textarea:not([disabled])'
+    );
+    firstField?.focus();
   } else {
     msgInput.focus();
   }
-  setLoading(false);
 
   // 3. Enhance chat bubble with LLM in background
   const llmGenerate = window._llmGenerate;
