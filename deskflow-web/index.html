@@ -452,7 +452,7 @@ document.querySelectorAll('.model-pill').forEach(pill => {
 <!-- ── WebGPU / LLM module ───────────────────────────────────────────────── -->
 <script type="module">
 import { pipeline, TextStreamer, env }
-  from 'https://cdn.jsdelivr.net/npm/@huggingface/transformers@3/dist/transformers.min.js';
+  from 'https://cdn.jsdelivr.net/npm/@huggingface/transformers@4.0.0';
 
 env.allowLocalModels = false;
 if (env.backends?.onnx?.wasm) {
@@ -488,12 +488,13 @@ function bindGenerate() {
       let accumulated = '';
       const streamer = new TextStreamer(window._llm.generator.tokenizer, {
         skip_prompt: true,
+          skip_special_tokens: true,
         callback_function: (token) => { accumulated += token; onToken(accumulated); },
       });
       const result = await window._llm.generator(messages, {
         max_new_tokens: 512,
         temperature: 0.7,
-        do_sample: true,
+        do_sample: false,
         streamer,
       });
       const finalText = result?.[0]?.generated_text?.at?.(-1)?.content || accumulated;
