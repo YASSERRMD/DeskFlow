@@ -1,13 +1,17 @@
 # DeskFlow
 
-**DeskFlow** is an AI-powered IT helpdesk assistant that runs entirely in the browser. It combines structured intake forms, intent classification, runbook-based knowledge retrieval, and on-device LLM inference — with no data ever leaving the user's machine.
+> **Experimental example project for [barq-chat-form](https://github.com/YASSERRMD/barq-chat-form)**
 
-Two deployment modes are available:
+DeskFlow demonstrates what you can build with barq-chat-form in a real-world scenario — an AI-powered IT helpdesk assistant that runs entirely in the browser, with no data ever leaving the user's machine.
+
+It is not intended for production use. It exists to showcase barq-chat-form's form engine integrated with intent classification, runbook-based RAG, and on-device LLM inference via WebGPU.
+
+Two deployment modes are included to cover both Python and pure-frontend usage of barq-chat-form:
 
 | Mode | Path | Description |
 |------|------|-------------|
-| **FastAPI Backend** | `public/` | Python backend handles intent, RAG, and prompt building. Browser runs LLM inference via WebGPU. |
-| **Standalone Frontend** | `deskflow-web/` | Zero backend. Everything runs in the browser — intent detection, form dispatch, RAG, and LLM inference. |
+| **FastAPI Backend** | `public/` | Python backend using `barq_chat_form` — intent detection, RAG, and prompt building server-side. Browser runs LLM inference via WebGPU. |
+| **Standalone Frontend** | `deskflow-web/` | Pure browser implementation using `barq-chat-form.js` — zero backend, everything runs client-side. |
 
 ---
 
