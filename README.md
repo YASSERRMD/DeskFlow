@@ -2,7 +2,7 @@
 
 > **Experimental example project for [barq-chat-form](https://github.com/YASSERRMD/barq-chat-form)**
 
-DeskFlow demonstrates what you can build with barq-chat-form in a real-world scenario — an AI-powered IT helpdesk assistant that runs entirely in the browser, with no data ever leaving the user's machine.
+DeskFlow demonstrates what you can build with barq-chat-form in a real-world scenario: an AI-powered IT helpdesk assistant that runs entirely in the browser, with no data ever leaving the user's machine.
 
 It is not intended for production use. It exists to showcase barq-chat-form's form engine integrated with intent classification, runbook-based RAG, and on-device LLM inference via WebGPU.
 
@@ -10,21 +10,21 @@ Two deployment modes are included to cover both Python and pure-frontend usage o
 
 | Mode | Path | Description |
 |------|------|-------------|
-| **FastAPI Backend** | `public/` | Python backend using `barq_chat_form` — intent detection, RAG, and prompt building server-side. Browser runs LLM inference via WebGPU. |
-| **Standalone Frontend** | `deskflow-web/` | Pure browser implementation using `barq-chat-form.js` — zero backend, everything runs client-side. |
+| **FastAPI Backend** | `public/` | Python backend using `barq_chat_form`: intent detection, RAG, and prompt building server-side. Browser runs LLM inference via WebGPU. |
+| **Standalone Frontend** | `deskflow-web/` | Pure browser implementation using `barq-chat-form.js`: zero backend, everything runs client-side. |
 
 
 ## Features
 
-- **On-device LLM inference** via WebGPU — two models available, switchable at runtime:
-  - [HuggingFaceTB/SmolLM2-360M-Instruct](https://huggingface.co/HuggingFaceTB/SmolLM2-360M-Instruct) — fast, lightweight
-  - [LiquidAI/LFM2.5-350M](https://huggingface.co/onnx-community/LFM2.5-350M-ONNX) — hybrid convolutional-attention architecture from Liquid AI, optimised for edge inference
-- **Structured intake forms** powered by [barq-chat-form](https://github.com/YASSERRMD/barq-chat-form) — 10 IT support form types
-- **Intent classification** — keyword scoring across 10 IT categories with greeting detection
-- **Runbook-backed RAG** — TF-IDF retrieval (server-side) or inline JS (client-side) from 10 markdown runbooks
-- **Ticket generation** — auto-assigned `INC-XXXX` reference numbers with streamed LLM resolution responses
-- **Graceful fallback** — rule-based template responses when WebGPU is unavailable
-- **Privacy-first** — all processing is local; no telemetry, no server calls for inference
+- **On-device LLM inference** via WebGPU: two models available, switchable at runtime:
+  - [HuggingFaceTB/SmolLM2-360M-Instruct](https://huggingface.co/HuggingFaceTB/SmolLM2-360M-Instruct): fast, lightweight
+  - [LiquidAI/LFM2.5-350M](https://huggingface.co/onnx-community/LFM2.5-350M-ONNX): hybrid convolutional-attention architecture from Liquid AI, optimised for edge inference
+- **Structured intake forms** powered by [barq-chat-form](https://github.com/YASSERRMD/barq-chat-form): 10 IT support form types
+- **Intent classification**: keyword scoring across 10 IT categories with greeting detection
+- **Runbook-backed RAG**: TF-IDF retrieval (server-side) or inline JS (client-side) from 10 markdown runbooks
+- **Ticket generation**: auto-assigned `INC-XXXX` reference numbers with streamed LLM resolution responses
+- **Graceful fallback**: rule-based template responses when WebGPU is unavailable
+- **Privacy-first**: all processing is local; no telemetry, no server calls for inference
 
 
 ## How It Works
@@ -34,7 +34,7 @@ Two deployment modes are included to cover both Python and pure-frontend usage o
          │
          ▼
 ┌─────────────────────┐
-│  Intent Classifier  │  keyword scoring — 10 IT intents + greeting detection
+│  Intent Classifier  │  keyword scoring: 10 IT intents + greeting detection
 └──────────┬──────────┘
            │ intent label
            ▼
@@ -82,7 +82,7 @@ A compact, instruction-tuned language model from Hugging Face. Ideal for low-lat
 A next-generation hybrid architecture from [Liquid AI](https://www.liquid.ai/) combining convolutional layers with full-attention layers. Purpose-built for efficient on-device inference with a 128K context window.
 
 - **Model:** `onnx-community/LFM2.5-350M-ONNX`
-- **Architecture:** LFM2 — 16 hybrid layers (conv + full-attention), SwiGLU activation, RoPE
+- **Architecture:** LFM2: 16 hybrid layers (conv + full-attention), SwiGLU activation, RoPE
 - **Parameters:** 350M
 - **Context window:** 128,000 tokens
 - **Quantisation:** INT4 (q4) via ONNX
@@ -90,7 +90,7 @@ A next-generation hybrid architecture from [Liquid AI](https://www.liquid.ai/) c
 Both models stream tokens directly into chat bubbles and fall back to template responses if WebGPU is unavailable.
 
 
-## Option 1 — FastAPI Backend (`public/`)
+## Option 1: FastAPI Backend (`public/`)
 
 The Python backend handles intent classification, form dispatch, and RAG retrieval. The frontend fetches structured prompts from the API and runs LLM inference locally via WebGPU.
 
@@ -103,7 +103,7 @@ The Python backend handles intent classification, form dispatch, and RAG retriev
 ├── adapters/
 │   └── fastapi_adapter.py     # /api/message, /api/submit, /api/resolve routes
 ├── intent/
-│   └── classifier.py          # Keyword scoring — 10 IT intents + greeting detection
+│   └── classifier.py          # Keyword scoring: 10 IT intents + greeting detection
 ├── forms/
 │   ├── dispatcher.py          # FORM_MAP: intent → build function
 │   ├── vpn.py                 # VPN connectivity form
@@ -123,7 +123,7 @@ The Python backend handles intent classification, form dispatch, and RAG retriev
 ├── knowledge/
 │   └── runbooks/              # 10 markdown runbooks (one per intent)
 ├── public/
-│   └── index.html             # Chat UI — served at /
+│   └── index.html             # Chat UI: served at /
 └── tests/
     ├── test_intent.py
     ├── test_forms.py
@@ -163,7 +163,7 @@ The FastAPI server serves the full chat UI at `/` and the standalone frontend at
 | `GET`  | `/api/resolutions` | List all resolved tickets |
 
 
-## Option 2 — Standalone Frontend (`deskflow-web/`)
+## Option 2: Standalone Frontend (`deskflow-web/`)
 
 Zero backend required. Intent detection, form building, runbook lookup, and LLM inference all run in the browser.
 
@@ -171,7 +171,7 @@ Zero backend required. Intent detection, form building, runbook lookup, and LLM 
 
 ```
 deskflow-web/
-├── index.html            # Chat UI — self-contained, no build step
+├── index.html            # Chat UI: self-contained, no build step
 ├── barq-chat-form.js     # JS port of the barq-chat-form form engine
 ├── barq-chat-form.css    # Dark-theme form styles
 ├── forms.js              # 10 IT support forms built with barq-chat-form.js
@@ -193,7 +193,7 @@ python3 -m http.server 8080
 
 ## Self-Contained Build (`publish/index.html`)
 
-`publish/index.html` is a single-file build with all JavaScript and CSS inlined — no external dependencies except CDN references for Tailwind, marked.js, and Transformers.js. Drop it anywhere and it works.
+`publish/index.html` is a single-file build with all JavaScript and CSS inlined: no external dependencies except CDN references for Tailwind, marked.js, and Transformers.js. Drop it anywhere and it works.
 
 
 ## Model Switcher
@@ -209,33 +209,33 @@ python3 -m pytest tests/ -v
 
 ```
 72 passing tests:
-  36 intent tests    — all 10 intents, greeting detection, fallback, case insensitivity
-  21 form tests      — all 10 form builds, field content, dispatcher
-  15 pipeline tests  — load_knowledge_base, build_index, retrieve_context
+  36 intent tests   : all 10 intents, greeting detection, fallback, case insensitivity
+  21 form tests     : all 10 form builds, field content, dispatcher
+  15 pipeline tests : load_knowledge_base, build_index, retrieve_context
 ```
 
 
 ## Extending DeskFlow
 
-### Add a new IT form — FastAPI version
+### Add a new IT form: FastAPI version
 
 1. Create `forms/<name>.py` with a `build() -> str` function using `barq_chat_form`
 2. Add intent keywords in `intent/classifier.py` → `INTENT_KEYWORDS`
 3. Register the builder in `forms/dispatcher.py` → `FORM_MAP`
 4. Add a template response in `llm/responder.py` → `_TEMPLATE_RESPONSES`
 
-### Add a new IT form — standalone frontend
+### Add a new IT form: standalone frontend
 
 1. Add a builder function in `deskflow-web/forms.js` using `barq-chat-form.js`
 2. Register it in `FORM_MAP` in `forms.js`
 3. Add intent keywords in `deskflow-web/intent.js` → `INTENT_KEYWORDS`
 4. Add a template response in `intent.js` → `TEMPLATES`
 
-### Add a runbook — FastAPI version
+### Add a runbook: FastAPI version
 
 Drop a `.md` or `.txt` file into `knowledge/runbooks/`. The TF-IDF index rebuilds automatically on next startup.
 
-### Add a runbook — standalone frontend
+### Add a runbook: standalone frontend
 
 Add an entry to `RUNBOOKS` in `deskflow-web/intent.js`.
 
