@@ -13,7 +13,6 @@ Two deployment modes are included to cover both Python and pure-frontend usage o
 | **FastAPI Backend** | `public/` | Python backend using `barq_chat_form` — intent detection, RAG, and prompt building server-side. Browser runs LLM inference via WebGPU. |
 | **Standalone Frontend** | `deskflow-web/` | Pure browser implementation using `barq-chat-form.js` — zero backend, everything runs client-side. |
 
----
 
 ## Features
 
@@ -27,7 +26,6 @@ Two deployment modes are included to cover both Python and pure-frontend usage o
 - **Graceful fallback** — rule-based template responses when WebGPU is unavailable
 - **Privacy-first** — all processing is local; no telemetry, no server calls for inference
 
----
 
 ## How It Works
 
@@ -66,7 +64,6 @@ Two deployment modes are included to cover both Python and pure-frontend usage o
       Chat bubble rendered
 ```
 
----
 
 ## On-Device Models
 
@@ -92,7 +89,6 @@ A next-generation hybrid architecture from [Liquid AI](https://www.liquid.ai/) c
 
 Both models stream tokens directly into chat bubbles and fall back to template responses if WebGPU is unavailable.
 
----
 
 ## Option 1 — FastAPI Backend (`public/`)
 
@@ -166,7 +162,6 @@ The FastAPI server serves the full chat UI at `/` and the standalone frontend at
 | `POST` | `/api/resolve` | Log a browser-generated LLM response |
 | `GET`  | `/api/resolutions` | List all resolved tickets |
 
----
 
 ## Option 2 — Standalone Frontend (`deskflow-web/`)
 
@@ -195,19 +190,16 @@ python3 -m http.server 8080
 
 > **Requirements:** Chrome 113+ or any browser with WebGPU support. Falls back to template responses when WebGPU is unavailable.
 
----
 
 ## Self-Contained Build (`publish/index.html`)
 
 `publish/index.html` is a single-file build with all JavaScript and CSS inlined — no external dependencies except CDN references for Tailwind, marked.js, and Transformers.js. Drop it anywhere and it works.
 
----
 
 ## Model Switcher
 
 Both `public/index.html` and `deskflow-web/index.html` include a runtime model switcher in the header. Click **SmolLM2** or **LFM2.5** to hot-swap the active model. The previous model is disposed and the new one loads with a live progress bar. Pill buttons are disabled during the load and re-enabled on completion.
 
----
 
 ## Tests
 
@@ -222,7 +214,6 @@ python3 -m pytest tests/ -v
   15 pipeline tests  — load_knowledge_base, build_index, retrieve_context
 ```
 
----
 
 ## Extending DeskFlow
 
@@ -248,7 +239,6 @@ Drop a `.md` or `.txt` file into `knowledge/runbooks/`. The TF-IDF index rebuild
 
 Add an entry to `RUNBOOKS` in `deskflow-web/intent.js`.
 
----
 
 ## Tech Stack
 
