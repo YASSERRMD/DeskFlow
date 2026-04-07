@@ -116,8 +116,8 @@
     .form-bubble .text-red-500 { color: #f85149; font-size: 0.78rem; margin-top: 3px; display: block; }
 
     /* Step wizard */
-    .formora-step { display: none; }
-    .formora-step.active { display: block; }
+    .barq-step { display: none; }
+    .barq-step.active { display: block; }
     .step-nav { display: flex; gap: 8px; margin-top: 1.1rem; }
     .step-nav button {
       flex: 1; padding: 0.55rem; border-radius: 8px; font-weight: 600;
@@ -572,19 +572,19 @@ function injectForm(formHtml, intent) {
   messagesEl.appendChild(wrap);
   scrollBottom();
 
-  // Get the form ID from the data-formora-id wrapper (formora-core pattern)
-  const formId = bubble.querySelector('[data-formora-id]')?.getAttribute('data-formora-id') || '';
+  // Get the form ID from the data-barq-id wrapper (barq-chat-form-core pattern)
+  const formId = bubble.querySelector('[data-barq-id]')?.getAttribute('data-barq-id') || '';
 
-  // Listen on window for formora:submit CustomEvent — matches formora-core renderer output
-  async function onFormoraSubmit(e) {
+  // Listen on window for barq:submit CustomEvent — matches barq-chat-form-core renderer output
+  async function onBarqSubmit(e) {
     const { raw } = e.detail;
-    // Parse the __formora__{...} message to get form_id and data
+    // Parse the __barq__{...} message to get form_id and data
     let payload;
-    try { payload = JSON.parse(raw.slice('__formora__'.length)); } catch { return; }
+    try { payload = JSON.parse(raw.slice('__barq__'.length)); } catch { return; }
     if (payload.form_id !== formId) return; // not this form
 
     // One submission per form
-    window.removeEventListener('formora:submit', onFormoraSubmit);
+    window.removeEventListener('barq:submit', onBarqSubmit);
 
     const formData = payload.data;
     const typingBubble = addTyping();
@@ -637,7 +637,7 @@ function injectForm(formHtml, intent) {
     scrollBottom();
   }
 
-  window.addEventListener('formora:submit', onFormoraSubmit);
+  window.addEventListener('barq:submit', onBarqSubmit);
   return bubble;
 }
 
@@ -662,8 +662,8 @@ document.querySelectorAll('.model-pill').forEach(pill => {
 });
 
 // collectFormData and setupStepWizard removed:
-// formora-core now handles data collection and multi-step navigation
-// via its own inline JavaScript, dispatching window formora:submit.
+// barq-chat-form-core now handles data collection and multi-step navigation
+// via its own inline JavaScript, dispatching window barq:submit.
 </script>
 
 </body>

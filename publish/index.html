@@ -34,7 +34,7 @@
   </script>
 
   <style>
-    /* ── formora.css ── */
+    /* ── barq-chat-form.css ── */
     .frm-wrapper {
       font-family: 'Inter', system-ui, sans-serif;
       font-size: 0.875rem;
@@ -295,9 +295,9 @@
 <!-- ── Marked.js ─────────────────────────────────────────────────────────── -->
 <script src="https://cdn.jsdelivr.net/npm/marked@9/marked.min.js"></script>
 
-<!-- ── formora.js (inlined) ──────────────────────────────────────────────── -->
+<!-- ── barq-chat-form.js (inlined) ──────────────────────────────────────────────── -->
 <script>
-const FORMORA_PREFIX = '__formora__';
+const BARQ_PREFIX = '__barq__';
 
 class Rule {
   static required(msg = 'This field is required') { return { type: 'required', message: msg }; }
@@ -392,10 +392,10 @@ function renderField(f) {
 function renderForm(form) {
   if (form._multiStep && form._steps.length > 0) return renderMultiStep(form);
   const id = form._id;
-  return `<div class="frm-wrapper" data-formora-id="${_fEsc(id)}">
+  return `<div class="frm-wrapper" data-barq-id="${_fEsc(id)}">
   ${form._title?`<div class="frm-title">${_fEsc(form._title)}</div>`:''}
   ${form._description?`<div class="frm-desc">${_fEsc(form._description)}</div>`:''}
-  <form class="frm-form" data-formora-id="${_fEsc(id)}" novalidate>
+  <form class="frm-form" data-barq-id="${_fEsc(id)}" novalidate>
     ${form._fields.map(renderField).join('\n')}
     <div class="frm-actions"><button type="submit" class="frm-btn-submit">${_fEsc(form._submitLabel)}</button></div>
     <div class="frm-success" style="display:none">${_fEsc(form._successMsg)}</div>
@@ -411,11 +411,11 @@ function renderMultiStep(form) {
       ${step.title?`<div class="frm-step-title">${_fEsc(step.title)}</div>`:''}
       ${step.fields.map(renderField).join('\n')}
     </div>`).join('\n');
-  return `<div class="frm-wrapper" data-formora-id="${_fEsc(id)}">
+  return `<div class="frm-wrapper" data-barq-id="${_fEsc(id)}">
   ${form._title?`<div class="frm-title">${_fEsc(form._title)}</div>`:''}
   <div class="frm-progress-label">Step 1 of ${total}</div>
   <div class="frm-progress-bar"><div class="frm-progress-fill" id="${_fEsc(id)}-progress" style="width:${Math.round(100/total)}%"></div></div>
-  <form class="frm-form" data-formora-id="${_fEsc(id)}" novalidate>
+  <form class="frm-form" data-barq-id="${_fEsc(id)}" novalidate>
     ${stepsHtml}
     <div class="frm-nav">
       <button type="button" class="frm-btn-back" style="display:none">Back</button>
@@ -428,14 +428,14 @@ function renderMultiStep(form) {
 }
 
 function attachForms(container) {
-  container.querySelectorAll('form[data-formora-id]').forEach(form => {
+  container.querySelectorAll('form[data-barq-id]').forEach(form => {
     _attachConditions(form); _attachMultiStep(form);
     form.addEventListener('submit', e => {
       e.preventDefault();
       if (!_validate(form)) return;
       const result = _collect(form);
       _showSuccess(form);
-      window.dispatchEvent(new CustomEvent('formora:submit', { detail:{ raw:result.toMessage(), parsed:result } }));
+      window.dispatchEvent(new CustomEvent('barq:submit', { detail:{ raw:result.toMessage(), parsed:result } }));
     });
   });
 }
@@ -468,7 +468,7 @@ function _attachMultiStep(form) {
   const stepEls = form.querySelectorAll('.frm-step');
   if (!stepEls.length) return;
   const total = stepEls.length; let current = 0;
-  const formId   = form.getAttribute('data-formora-id') || form.closest('[data-formora-id]')?.getAttribute('data-formora-id') || '';
+  const formId   = form.getAttribute('data-barq-id') || form.closest('[data-barq-id]')?.getAttribute('data-barq-id') || '';
   const progress = document.getElementById(`${formId}-progress`);
   const label    = form.closest('.frm-wrapper')?.querySelector('.frm-progress-label');
   const btnBack  = form.querySelector('.frm-btn-back');
@@ -517,7 +517,7 @@ function _clearError(el) {
   el.parentNode?.querySelectorAll('.frm-error-msg').forEach(e=>e.remove());
 }
 function _collect(form) {
-  const formId=form.getAttribute('data-formora-id')||form.closest('[data-formora-id]')?.getAttribute('data-formora-id')||'';
+  const formId=form.getAttribute('data-barq-id')||form.closest('[data-barq-id]')?.getAttribute('data-barq-id')||'';
   const data={}, typed={};
   form.querySelectorAll('input,select,textarea').forEach(el => {
     if (!el.name) return;
@@ -536,13 +536,13 @@ function _showSuccess(form) {
 
 class FormResult {
   constructor(formId,data,typedData) { this.formId=formId; this.data=data; this.typedData=typedData; }
-  toMessage() { return FORMORA_PREFIX+JSON.stringify({ form_id:this.formId, data:this.data, typed_data:this.typedData }); }
+  toMessage() { return BARQ_PREFIX+JSON.stringify({ form_id:this.formId, data:this.data, typed_data:this.typedData }); }
   asText() { return Object.entries(this.typedData).filter(([,v])=>v!==''&&v!==false).map(([k,v])=>`${k.replace(/_/g,' ')}: ${v}`).join(', '); }
 }
-function isFormoraMessage(msg) { return typeof msg==='string'&&msg.startsWith(FORMORA_PREFIX); }
+function isBarqMessage(msg) { return typeof msg==='string'&&msg.startsWith(BARQ_PREFIX); }
 function parseFormoraMessage(msg) {
-  if (!isFormoraMessage(msg)) return null;
-  try { const p=JSON.parse(msg.slice(FORMORA_PREFIX.length)); return new FormResult(p.form_id,p.data,p.typed_data); } catch { return null; }
+  if (!isBarqMessage(msg)) return null;
+  try { const p=JSON.parse(msg.slice(BARQ_PREFIX.length)); return new FormResult(p.form_id,p.data,p.typed_data); } catch { return null; }
 }
 </script>
 
@@ -799,20 +799,20 @@ function injectForm(formHtml, intent) {
   const bubble = addBotRow('');
   bubble.style.padding = '12px';
   bubble.innerHTML = formHtml;
-  const formEl = bubble.querySelector('form[data-formora-id]');
-  const formId = formEl?.getAttribute('data-formora-id');
+  const formEl = bubble.querySelector('form[data-barq-id]');
+  const formId = formEl?.getAttribute('data-barq-id');
   attachForms(bubble);
-  function onFormoraSubmit(e) {
+  function onBarqSubmit(e) {
     const { parsed } = e.detail;
     if (parsed.formId !== formId) return;
-    window.removeEventListener('formora:submit', onFormoraSubmit);
+    window.removeEventListener('barq:submit', onBarqSubmit);
     const requestNumber = nextTicket();
     const pill = document.createElement('div');
     pill.className = 'inc-pill'; pill.textContent = `✓ ${requestNumber}`;
     bubble.insertBefore(pill, bubble.firstChild);
     handleFormSubmit(parsed, requestNumber, intent);
   }
-  window.addEventListener('formora:submit', onFormoraSubmit);
+  window.addEventListener('barq:submit', onBarqSubmit);
   scrollBottom();
   return bubble;
 }

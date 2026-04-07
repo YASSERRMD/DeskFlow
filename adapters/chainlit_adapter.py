@@ -10,7 +10,7 @@ import logging
 import os
 
 import chainlit as cl
-from formora import is_formora_message, parse
+from barq_chat_form import is_barq_message, parse
 
 from intent.classifier import detect_intent, get_intro_message
 from forms.dispatcher import dispatch_form
@@ -37,17 +37,17 @@ async def on_message(message: cl.Message) -> None:
     """Handle incoming chat messages."""
     content = message.content or ""
 
-    if is_formora_message(content):
+    if is_barq_message(content):
         await _handle_form_submission(content)
     else:
         await _handle_user_message(content)
 
 
 async def _handle_form_submission(content: str) -> None:
-    """Parse a formora submission, retrieve context, and generate a response."""
+    """Parse a barq submission, retrieve context, and generate a response."""
     form_result = parse(content)
     if form_result is None:
-        logger.warning("Failed to parse formora message")
+        logger.warning("Failed to parse barq message")
         await cl.Message(
             content="Sorry, I couldn't read your form submission. Please try again."
         ).send()

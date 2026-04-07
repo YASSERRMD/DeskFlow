@@ -1,9 +1,9 @@
 /**
- * forms.js — All 10 DeskFlow IT support form definitions using formora.js.
+ * forms.js — All 10 DeskFlow IT support form definitions using barq-chat-form.js.
  * Each exported function returns a built HTML string.
  */
 
-import { Form, Rule } from './formora.js';
+import { Form, Rule } from './barq-chat-form.js';
 
 export function buildVpnForm() {
   return new Form('vpn_issue')

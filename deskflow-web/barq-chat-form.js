@@ -1,14 +1,14 @@
 /**
- * formora.js — JavaScript port of the formora form builder.
+ * barq-chat-form.js — JavaScript port of the barq-chat-form form builder.
  *
- * Mirrors the Python/Rust formora API:
+ * Mirrors the Python/Rust barq-chat-form API:
  *   new Form("id").title("T").text("name","Name",{required:true}).build()
  *
- * Form submissions are serialised as  __formora__{...}  messages so they can
+ * Form submissions are serialised as  __barq__{...}  messages so they can
  * be detected and parsed without a backend.
  */
 
-export const FORMORA_PREFIX = '__formora__';
+export const BARQ_PREFIX = '__barq__';
 
 // ─── Validation Rules ────────────────────────────────────────────────────── //
 
@@ -214,10 +214,10 @@ function renderForm(form) {
   const fieldHtml = fields.map(renderField).join('\n');
 
   return `
-<div class="frm-wrapper" data-formora-id="${esc(id)}">
+<div class="frm-wrapper" data-barq-id="${esc(id)}">
   ${form._title ? `<div class="frm-title">${esc(form._title)}</div>` : ''}
   ${form._description ? `<div class="frm-desc">${esc(form._description)}</div>` : ''}
-  <form class="frm-form" data-formora-id="${esc(id)}" novalidate>
+  <form class="frm-form" data-barq-id="${esc(id)}" novalidate>
     ${fieldHtml}
     <div class="frm-actions">
       <button type="submit" class="frm-btn-submit">${esc(form._submitLabel)}</button>
@@ -246,12 +246,12 @@ function renderMultiStep(form) {
     </div>`).join('\n');
 
   return `
-<div class="frm-wrapper" data-formora-id="${esc(id)}">
+<div class="frm-wrapper" data-barq-id="${esc(id)}">
   ${form._title ? `<div class="frm-title">${esc(form._title)}</div>` : ''}
   ${form._description ? `<div class="frm-desc">${esc(form._description)}</div>` : ''}
   <div class="frm-progress-label">Step 1 of ${total}</div>
   <div class="frm-progress-bar"><div class="frm-progress-fill" id="${esc(id)}-progress" style="width:${Math.round(100/total)}%"></div></div>
-  <form class="frm-form" data-formora-id="${esc(id)}" novalidate>
+  <form class="frm-form" data-barq-id="${esc(id)}" novalidate>
     ${stepsHtml}
     <div class="frm-nav">
       <button type="button" class="frm-btn-back" style="display:none">Back</button>
@@ -268,16 +268,16 @@ function renderMultiStep(form) {
 
 /**
  * Attach form behaviour to all .frm-form elements inside a container.
- * On submit, dispatches a `formora:submit` CustomEvent on `window`
- * matching the upstream formora-core behaviour:
- *   window.addEventListener('formora:submit', e => {
- *     const { raw, parsed } = e.detail;   // raw = __formora__{...}, parsed = FormResult
+ * On submit, dispatches a `barq:submit` CustomEvent on `window`
+ * matching the upstream barq-chat-form-core behaviour:
+ *   window.addEventListener('barq:submit', e => {
+ *     const { raw, parsed } = e.detail;   // raw = __barq__{...}, parsed = FormResult
  *   });
  *
  * @param {HTMLElement} container
  */
 export function attachForms(container) {
-  container.querySelectorAll('form[data-formora-id]').forEach(form => {
+  container.querySelectorAll('form[data-barq-id]').forEach(form => {
     _attachConditions(form);
     _attachMultiStep(form);
     form.addEventListener('submit', e => {
@@ -285,8 +285,8 @@ export function attachForms(container) {
       if (!_validate(form)) return;
       const result = _collect(form);
       _showSuccess(form);
-      // Dispatch on window — matches formora-core renderer output
-      window.dispatchEvent(new CustomEvent('formora:submit', {
+      // Dispatch on window — matches barq-chat-form-core renderer output
+      window.dispatchEvent(new CustomEvent('barq:submit', {
         detail: { raw: result.toMessage(), parsed: result },
       }));
     });
@@ -334,7 +334,7 @@ function _attachMultiStep(form) {
 
   const total    = stepEls.length;
   let current    = 0;
-  const formId   = form.getAttribute('data-formora-id') || form.closest('[data-formora-id]')?.getAttribute('data-formora-id') || '';
+  const formId   = form.getAttribute('data-barq-id') || form.closest('[data-barq-id]')?.getAttribute('data-barq-id') || '';
   const progress = document.getElementById(`${formId}-progress`);
   const label    = form.closest('.frm-wrapper')?.querySelector('.frm-progress-label');
   const btnBack  = form.querySelector('.frm-btn-back');
@@ -409,7 +409,7 @@ function _clearError(el) {
 // ── Data collection ──────────────────────────────────────────────────────── //
 
 function _collect(form) {
-  const formId  = form.getAttribute('data-formora-id') || form.closest('[data-formora-id]')?.getAttribute('data-formora-id') || '';
+  const formId  = form.getAttribute('data-barq-id') || form.closest('[data-barq-id]')?.getAttribute('data-barq-id') || '';
   const data    = {};
   const typed   = {};
 
@@ -445,9 +445,9 @@ export class FormResult {
     this.typedData = typedData;
   }
 
-  /** Serialise to the __formora__{...} wire format */
+  /** Serialise to the __barq__{...} wire format */
   toMessage() {
-    return FORMORA_PREFIX + JSON.stringify({
+    return BARQ_PREFIX + JSON.stringify({
       form_id:    this.formId,
       data:       this.data,
       typed_data: this.typedData,
@@ -463,16 +463,16 @@ export class FormResult {
   }
 }
 
-/** Check if a string is a formora submission message */
-export function isFormoraMessage(msg) {
-  return typeof msg === 'string' && msg.startsWith(FORMORA_PREFIX);
+/** Check if a string is a barq submission message */
+export function isBarqMessage(msg) {
+  return typeof msg === 'string' && msg.startsWith(BARQ_PREFIX);
 }
 
-/** Parse a formora submission message */
+/** Parse a barq submission message */
 export function parse(msg) {
-  if (!isFormoraMessage(msg)) return null;
+  if (!isBarqMessage(msg)) return null;
   try {
-    const payload = JSON.parse(msg.slice(FORMORA_PREFIX.length));
+    const payload = JSON.parse(msg.slice(BARQ_PREFIX.length));
     return new FormResult(payload.form_id, payload.data, payload.typed_data);
   } catch {
     return null;

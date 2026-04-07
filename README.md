@@ -5,7 +5,7 @@ AI-powered IT Helpdesk assistant with two implementations:
 - **`public/`** — FastAPI backend + browser WebGPU inference (Python-powered)
 - **`deskflow-web/`** — Fully standalone frontend (no backend, everything runs in the browser)
 
-Both use [formora](https://github.com/YASSERRMD/formora) for structured intake forms and [SmolLM2-360M](https://huggingface.co/HuggingFaceTB/SmolLM2-360M-Instruct) via WebGPU for local LLM inference.
+Both use [barq-chat-form](https://github.com/YASSERRMD/barq-chat-form) for structured intake forms and [SmolLM2-360M](https://huggingface.co/HuggingFaceTB/SmolLM2-360M-Instruct) via WebGPU for local LLM inference.
 
 ---
 
@@ -27,7 +27,7 @@ Both use [formora](https://github.com/YASSERRMD/formora) for structured intake f
            │
            ▼
 ┌─────────────────────┐
-│  Form Dispatcher    │  maps intent → formora HTML form
+│  Form Dispatcher    │  maps intent → barq-chat-form HTML form
 └──────────┬──────────┘
            │ HTML form injected into chat
            ▼
@@ -134,9 +134,9 @@ Zero backend. Everything — intent detection, form building, runbook lookup, an
 ```
 deskflow-web/
 ├── index.html     # Full chat UI
-├── formora.js     # JS port of the formora form builder
-├── formora.css    # Dark-theme form styles
-├── forms.js       # All 10 IT support forms built with formora.js
+├── barq-chat-form.js     # JS port of the barq-chat-form builder
+├── barq-chat-form.css    # Dark-theme form styles
+├── forms.js       # All 10 IT support forms built with barq-chat-form.js
 └── intent.js      # Intent classifier, prompt builders, inline runbooks, template responses
 ```
 
@@ -183,14 +183,14 @@ python3 -m pytest tests/ -v
 
 ### Add a new form (FastAPI version)
 
-1. Create `forms/<name>.py` with a `build() -> str` function using formora
+1. Create `forms/<name>.py` with a `build() -> str` function using barq-chat-form
 2. Add keywords to `intent/classifier.py` → `INTENT_KEYWORDS`
 3. Register in `forms/dispatcher.py` → `FORM_MAP`
 4. Add a template response in `llm/responder.py` → `_TEMPLATE_RESPONSES`
 
 ### Add a new form (frontend-only version)
 
-1. Add a builder function in `deskflow-web/forms.js` using `formora.js`
+1. Add a builder function in `deskflow-web/forms.js` using `barq-chat-form.js`
 2. Register it in `FORM_MAP` in `forms.js`
 3. Add intent keywords in `deskflow-web/intent.js` → `INTENT_KEYWORDS`
 4. Add a template response in `intent.js` → `TEMPLATES`

@@ -1,4 +1,4 @@
-from formora import Form, CssFramework
+from barq_chat_form import Form, CssFramework
 
 
 def build() -> str:

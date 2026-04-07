@@ -3,7 +3,7 @@ rag/retriever.py — TF-IDF based local knowledge base retrieval.
 
 Loads .md, .txt, and .pdf files from a directory, chunks them, builds a
 TF-IDF index, and retrieves the most relevant chunks for a given query
-derived from a formora FormResult.
+derived from a barq_chat_form FormResult.
 """
 
 from __future__ import annotations
@@ -150,7 +150,7 @@ def retrieve_context(form_result: Any, top_k: int = 5, knowledge_dir: str | None
     """
     Retrieve the top_k most relevant knowledge-base chunks for a form result.
 
-    Accepts a formora FormResult object, a plain dict with keys
+    Accepts a barq_chat_form FormResult object, a plain dict with keys
     ``form_id`` and ``typed_data``, or any object with those attributes.
     Returns concatenated chunk content as a single string.
     """

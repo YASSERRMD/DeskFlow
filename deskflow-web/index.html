@@ -32,7 +32,7 @@
       }
     }
   </script>
-  <link rel="stylesheet" href="formora.css" />
+  <link rel="stylesheet" href="barq-chat-form.css" />
   <style>
     * { box-sizing: border-box; }
     body { margin: 0; background: #0d1117; color: #adbac7; font-family: 'Inter', system-ui, sans-serif; }
@@ -199,7 +199,7 @@
 
 <!-- ── Main app logic ────────────────────────────────────────────────────── -->
 <script type="module">
-import { attachForms } from './formora.js';
+import { attachForms } from './barq-chat-form.js';
 import { dispatchForm }                          from './forms.js';
 import {
   detectIntent, getIntroMessage,
@@ -299,20 +299,20 @@ function injectForm(formHtml, intent) {
   bubble.innerHTML = formHtml;
 
   // Derive the form ID from the injected HTML so we only react to this form
-  const formEl   = bubble.querySelector('form[data-formora-id]');
-  const formId   = formEl?.getAttribute('data-formora-id');
+  const formEl   = bubble.querySelector('form[data-barq-id]');
+  const formId   = formEl?.getAttribute('data-barq-id');
 
-  // Attach formora behaviours (conditions, multi-step, validation)
+  // Attach barq-chat-form behaviours (conditions, multi-step, validation)
   attachForms(bubble);
 
-  // Listen on window for the formora:submit CustomEvent (upstream pattern)
-  function onFormoraSubmit(e) {
+  // Listen on window for the barq:submit CustomEvent (upstream pattern)
+  function onBarqSubmit(e) {
     const { parsed } = e.detail;
     // Ignore events from other forms on the page
     if (parsed.formId !== formId) return;
 
     // Remove this listener — one submission per injected form
-    window.removeEventListener('formora:submit', onFormoraSubmit);
+    window.removeEventListener('barq:submit', onBarqSubmit);
 
     const requestNumber = nextTicket();
 
@@ -325,7 +325,7 @@ function injectForm(formHtml, intent) {
     handleFormSubmit(parsed, requestNumber, intent);
   }
 
-  window.addEventListener('formora:submit', onFormoraSubmit);
+  window.addEventListener('barq:submit', onBarqSubmit);
 
   scrollBottom();
   return bubble;
